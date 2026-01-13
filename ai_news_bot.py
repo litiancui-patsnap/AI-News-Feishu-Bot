@@ -1,0 +1,137 @@
+from scrapegraphai.graphs import SmartScraperGraph
+from ddgs import DDGS
+from config import OLLAMA_CONFIG, FEISHU_WEBHOOK_URL
+import requests
+import time
+
+def search_ai_news(query="AI news latest", max_results=5):
+    """使用DuckDuckGo搜索最新AI资讯"""
+    results = []
+    seen_urls = set()
+    try:
+        ddgs = DDGS()
+        for r in ddgs.text(query, max_results=max_results * 2):
+            url = r.get("href", "")
+            if url not in seen_urls:
+                seen_urls.add(url)
+                results.append({
+                    "title": r.get("title", ""),
+                    "url": url,
+                    "snippet": r.get("body", "")
+                })
+                if len(results) >= max_results:
+                    break
+            time.sleep(1)
+    except Exception as e:
+        print(f"搜索出错: {e}")
+    return results
+
+def translate_to_chinese(text):
+    """将英文文本翻译成中文"""
+    from ollama import chat
+    try:
+        response = chat(
+            model='mistral-nemo:latest',
+            messages=[{'role': 'user', 'content': f'将以下内容翻译成中文，只返回翻译结果：\n{text}'}]
+        )
+        return response['message']['content']
+    except:
+        return text
+
+def scrape_article_content(url):
+    """使用ScrapeGraphAI抓取文章内容"""
+    graph_config = {
+        "llm": OLLAMA_CONFIG,
+        "verbose": True,
+        "headless": True,
+    }
+
+    smart_scraper = SmartScraperGraph(
+        prompt="用中文总结这篇文章的核心内容，包括主要观点和关键信息，限制在150字以内",
+        source=url,
+        config=graph_config
+    )
+
+    result = smart_scraper.run()
+    return result
+
+def send_to_feishu(news_items):
+    """发送卡片消息到飞书"""
+    elements = []
+
+    for item in news_items:
+        elements.append({
+            "tag": "div",
+            "text": {
+                "tag": "lark_md",
+                "content": f"**{item['title']}**\n{item['summary']}\n[查看原文]({item['url']})"
+            }
+        })
+        elements.append({"tag": "hr"})
+
+    card = {
+        "msg_type": "interactive",
+        "card": {
+            "header": {
+                "title": {
+                    "tag": "plain_text",
+                    "content": "🤖 AI资讯日报"
+                },
+                "template": "blue"
+            },
+            "elements": elements
+        }
+    }
+
+    response = requests.post(FEISHU_WEBHOOK_URL, json=card)
+    return response.status_code == 200
+
+def main():
+    import sys
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
+    print("搜索最新AI资讯...")
+    search_results = search_ai_news("AI artificial intelligence news 2026", max_results=3)
+
+    news_items = []
+    seen_titles = set()
+
+    for result in search_results:
+        title = result['title']
+        if title in seen_titles:
+            print(f"\n跳过重复: {title}")
+            continue
+
+        seen_titles.add(title)
+        print(f"\n处理第 {len(news_items) + 1} 条: {title}")
+
+        try:
+            content = scrape_article_content(result['url'])
+            if isinstance(content, dict):
+                summary = str(content.get('summary', content.get('content', result['snippet'])))[:200]
+            else:
+                summary = str(content)[:200]
+            news_items.append({
+                "title": title,
+                "url": result['url'],
+                "summary": summary
+            })
+        except Exception as e:
+            print(f"抓取失败: {e}，使用翻译备用方案")
+            translated = translate_to_chinese(result['snippet'][:200])
+            news_items.append({
+                "title": title,
+                "url": result['url'],
+                "summary": translated
+            })
+
+    print(f"\n共获取 {len(news_items)} 条不重复资讯")
+    print("\n发送到飞书...")
+    if send_to_feishu(news_items):
+        print("发送成功!")
+    else:
+        print("发送失败")
+
+if __name__ == "__main__":
+    main()

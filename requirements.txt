@@ -1,0 +1,5 @@
+scrapegraphai
+playwright
+ddgs
+requests
+python-dotenv
