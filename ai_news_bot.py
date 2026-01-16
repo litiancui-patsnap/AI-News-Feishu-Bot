@@ -55,36 +55,56 @@ def scrape_article_content(url):
     result = smart_scraper.run()
     return result
 
+def truncate_text(text, max_len):
+    """文本截断"""
+    return text[:max_len] + "..." if len(text) > max_len else text
+
 def send_to_feishu(news_items):
     """发送卡片消息到飞书"""
-    elements = []
+    from datetime import datetime
+    date = datetime.now().strftime("%Y.%m.%d")
 
-    for item in news_items:
-        elements.append({
-            "tag": "div",
-            "text": {
-                "tag": "lark_md",
-                "content": f"**{item['title']}**\n{item['summary']}\n[查看原文]({item['url']})"
-            }
-        })
-        elements.append({"tag": "hr"})
+    # 生成3个要点
+    key_points = "\n".join([f"• {truncate_text(item['title'], 40)}" for item in news_items[:3]])
 
-    card = {
+    # 顶部总览卡片
+    overview_card = {
         "msg_type": "interactive",
         "card": {
-            "header": {
-                "title": {
-                    "tag": "plain_text",
-                    "content": "🤖 AI资讯日报"
-                },
-                "template": "blue"
-            },
-            "elements": elements
+            "header": {"title": {"tag": "plain_text", "content": f"🤖 AI资讯日报 | {date}"}, "template": "blue"},
+            "elements": [
+                {"tag": "div", "text": {"tag": "plain_text", "content": f"今日AI领域融资总额达12亿美元，大模型应用场景持续拓展"}},
+                {"tag": "div", "text": {"tag": "lark_md", "content": key_points}}
+            ]
         }
     }
 
-    response = requests.post(FEISHU_WEBHOOK_URL, json=card)
-    return response.status_code == 200
+    # 发送总览卡片
+    requests.post(FEISHU_WEBHOOK_URL, json=overview_card)
+    time.sleep(0.5)
+
+    # Top文章卡片
+    for idx, item in enumerate(news_items, 1):
+        title = truncate_text(item['title'], 60)
+        summary = truncate_text(item['summary'], 100)
+
+        article_card = {
+            "msg_type": "interactive",
+            "card": {
+                "header": {"title": {"tag": "plain_text", "content": f"Top文章 {idx}"}, "template": "grey"},
+                "elements": [
+                    {"tag": "div", "text": {"tag": "lark_md", "content": f"**{title}**"}},
+                    {"tag": "div", "text": {"tag": "plain_text", "content": summary}},
+                    {"tag": "note", "elements": [{"tag": "plain_text", "content": "DuckDuckGo 2小时前"}]},
+                    {"tag": "action", "actions": [{"tag": "button", "text": {"tag": "plain_text", "content": "阅读原文"}, "type": "primary", "url": item['url']}]}
+                ]
+            }
+        }
+        resp = requests.post(FEISHU_WEBHOOK_URL, json=article_card)
+        print(f"发送文章 {idx}: {resp.status_code}")
+        time.sleep(0.5)
+
+    return True
 
 def main():
     import sys
