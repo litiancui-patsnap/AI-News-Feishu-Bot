@@ -72,6 +72,24 @@ def extract_source(url):
     domain = domain.replace('www.', '').split('.')[0]
     return domain.capitalize()
 
+def get_topic_emoji(title, summary):
+    """根据标题和摘要推断主题emoji"""
+    text = (title + ' ' + summary).lower()
+
+    # 按优先级匹配关键词
+    if any(word in text for word in ['融资', '投资', '收购', 'funding', 'investment', 'acquisition']):
+        return '💰'
+    elif any(word in text for word in ['发布', '推出', 'launch', 'release', 'announce']):
+        return '🚀'
+    elif any(word in text for word in ['监管', '法规', '政策', 'regulation', 'policy', 'law']):
+        return '⚖️'
+    elif any(word in text for word in ['突破', '创新', 'breakthrough', 'innovation']):
+        return '🔬'
+    elif any(word in text for word in ['模型', 'gpt', 'llm', 'model', 'ai']):
+        return '🤖'
+    else:
+        return '📰'
+
 def truncate_text(text, max_len):
     """智能截断文本,在标点符号处截断"""
     if len(text) <= max_len:
@@ -114,11 +132,12 @@ def send_to_feishu(news_items):
         title = truncate_text(clean_title(item['title']), 80)
         summary = truncate_text(item['summary'], 150)
         source = extract_source(item['url'])
+        emoji = get_topic_emoji(item['title'], item['summary'])
 
         article_card = {
             "msg_type": "interactive",
             "card": {
-                "header": {"title": {"tag": "plain_text", "content": f"Top文章 {idx}"}, "template": "grey"},
+                "header": {"title": {"tag": "plain_text", "content": f"{emoji} Top文章 {idx}"}, "template": "grey"},
                 "elements": [
                     {"tag": "div", "text": {"tag": "lark_md", "content": f"**{title}**"}},
                     {"tag": "div", "text": {"tag": "plain_text", "content": summary}},
