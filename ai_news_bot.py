@@ -32,7 +32,7 @@ def translate_to_chinese(text):
     try:
         response = chat(
             model='mistral-nemo:latest',
-            messages=[{'role': 'user', 'content': f'将以下内容翻译成中文，只返回翻译结果：\n{text}'}]
+            messages=[{'role': 'user', 'content': f'提取以下AI资讯的核心观点和关键信息,用中文总结成2-3句话,突出新闻价值:\n{text}'}]
         )
         return response['message']['content']
     except:
@@ -55,9 +55,34 @@ def scrape_article_content(url):
     result = smart_scraper.run()
     return result
 
+def clean_title(title):
+    """清理标题,移除网站名称后缀"""
+    import re
+    # 移除常见的分隔符及其后的内容
+    patterns = [r'\s*[|\-–—]\s*[A-Za-z\s]+$', r'\s*\|\s*.+$']
+    for pattern in patterns:
+        title = re.sub(pattern, '', title)
+    return title.strip()
+
+def extract_source(url):
+    """从URL提取来源网站名称"""
+    from urllib.parse import urlparse
+    domain = urlparse(url).netloc
+    # 移除www.和常见后缀
+    domain = domain.replace('www.', '').split('.')[0]
+    return domain.capitalize()
+
 def truncate_text(text, max_len):
-    """文本截断"""
-    return text[:max_len] + "..." if len(text) > max_len else text
+    """智能截断文本,在标点符号处截断"""
+    if len(text) <= max_len:
+        return text
+    # 在标点符号处截断
+    truncated = text[:max_len]
+    for punct in ['。', '！', '？', '.', '!', '?', '，', ',']:
+        last_punct = truncated.rfind(punct)
+        if last_punct > max_len * 0.6:  # 至少保留60%的内容
+            return truncated[:last_punct + 1]
+    return truncated + "..."
 
 def send_to_feishu(news_items):
     """发送卡片消息到飞书"""
@@ -65,7 +90,7 @@ def send_to_feishu(news_items):
     date = datetime.now().strftime("%Y.%m.%d")
 
     # 生成3个要点
-    key_points = "\n".join([f"• {truncate_text(item['title'], 40)}" for item in news_items[:3]])
+    key_points = "\n".join([f"• {truncate_text(clean_title(item['title']), 50)}" for item in news_items[:3]])
 
     # 顶部总览卡片
     overview_card = {
@@ -73,20 +98,22 @@ def send_to_feishu(news_items):
         "card": {
             "header": {"title": {"tag": "plain_text", "content": f"🤖 AI资讯日报 | {date}"}, "template": "blue"},
             "elements": [
-                {"tag": "div", "text": {"tag": "plain_text", "content": f"今日AI领域融资总额达12亿美元，大模型应用场景持续拓展"}},
+                {"tag": "div", "text": {"tag": "plain_text", "content": f"今日精选 {len(news_items)} 条AI行业重要资讯"}},
                 {"tag": "div", "text": {"tag": "lark_md", "content": key_points}}
             ]
         }
     }
 
     # 发送总览卡片
-    requests.post(FEISHU_WEBHOOK_URL, json=overview_card)
+    resp = requests.post(FEISHU_WEBHOOK_URL, json=overview_card)
+    print(f"发送总览卡片: {resp.status_code}")
     time.sleep(0.5)
 
     # Top文章卡片
     for idx, item in enumerate(news_items, 1):
-        title = truncate_text(item['title'], 60)
-        summary = truncate_text(item['summary'], 100)
+        title = truncate_text(clean_title(item['title']), 80)
+        summary = truncate_text(item['summary'], 150)
+        source = extract_source(item['url'])
 
         article_card = {
             "msg_type": "interactive",
@@ -95,7 +122,7 @@ def send_to_feishu(news_items):
                 "elements": [
                     {"tag": "div", "text": {"tag": "lark_md", "content": f"**{title}**"}},
                     {"tag": "div", "text": {"tag": "plain_text", "content": summary}},
-                    {"tag": "note", "elements": [{"tag": "plain_text", "content": "DuckDuckGo 2小时前"}]},
+                    {"tag": "note", "elements": [{"tag": "plain_text", "content": f"来源: {source}"}]},
                     {"tag": "action", "actions": [{"tag": "button", "text": {"tag": "plain_text", "content": "阅读原文"}, "type": "primary", "url": item['url']}]}
                 ]
             }
