@@ -10,3 +10,8 @@ OLLAMA_CONFIG = {
 }
 
 FEISHU_WEBHOOK_URL = os.getenv("FEISHU_WEBHOOK_URL", "")
+
+# 可配置参数
+MAX_NEWS_ITEMS = int(os.getenv("MAX_NEWS_ITEMS", "3"))  # 每日推送资讯数量
+SEARCH_QUERY = os.getenv("SEARCH_QUERY", "AI artificial intelligence news 2026")  # 搜索关键词
+PUSH_TIME = os.getenv("PUSH_TIME", "9:50")  # 定时推送时间

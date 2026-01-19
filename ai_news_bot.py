@@ -1,6 +1,6 @@
 from scrapegraphai.graphs import SmartScraperGraph
 from ddgs import DDGS
-from config import OLLAMA_CONFIG, FEISHU_WEBHOOK_URL
+from config import OLLAMA_CONFIG, FEISHU_WEBHOOK_URL, MAX_NEWS_ITEMS, SEARCH_QUERY
 import requests
 import time
 
@@ -158,7 +158,7 @@ def main():
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
     print("搜索最新AI资讯...")
-    search_results = search_ai_news("AI artificial intelligence news 2026", max_results=3)
+    search_results = search_ai_news(SEARCH_QUERY, max_results=MAX_NEWS_ITEMS)
 
     news_items = []
     seen_titles = set()

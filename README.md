@@ -40,7 +40,11 @@ ollama serve
 ```bash
 copy .env.example .env
 ```
-编辑 `.env` 文件，填入飞书 Webhook URL
+编辑 `.env` 文件，配置以下参数:
+- `FEISHU_WEBHOOK_URL`: 飞书 Webhook URL (必填)
+- `MAX_NEWS_ITEMS`: 每日推送资讯数量 (可选,默认3条)
+- `SEARCH_QUERY`: 搜索关键词 (可选,默认"AI artificial intelligence news 2026")
+- `PUSH_TIME`: 定时推送时间 (可选,默认9:50)
 
 5. 运行程序
 ```bash
