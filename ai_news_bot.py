@@ -3,6 +3,31 @@ from ddgs import DDGS
 from config import OLLAMA_CONFIG, FEISHU_WEBHOOK_URL, MAX_NEWS_ITEMS, SEARCH_QUERY
 import requests
 import time
+from datetime import datetime
+
+def is_recent_article(url):
+    """检查文章是否为最近3天内的"""
+    import re
+    # 提取URL中的日期模式
+    date_patterns = [
+        r'/(\d{4})/(\d{2})/(\d{2})/',  # /2026/01/19/
+        r'/(\d{4})-(\d{2})-(\d{2})',    # /2026-01-19
+        r'(\d{4})(\d{2})(\d{2})',       # 20260119
+    ]
+
+    for pattern in date_patterns:
+        match = re.search(pattern, url)
+        if match:
+            try:
+                year, month, day = match.groups()
+                article_date = datetime(int(year), int(month), int(day))
+                days_old = (datetime.now() - article_date).days
+                return days_old <= 3
+            except:
+                continue
+
+    # 如果URL中没有日期，默认认为是最新的
+    return True
 
 def search_ai_news(query="AI news latest", max_results=5):
     """使用DuckDuckGo搜索最新AI资讯"""
@@ -10,9 +35,10 @@ def search_ai_news(query="AI news latest", max_results=5):
     seen_urls = set()
     try:
         ddgs = DDGS()
-        for r in ddgs.text(query, max_results=max_results * 2):
+        # 增加搜索范围到5倍，确保过滤后仍有足够结果
+        for r in ddgs.text(query, max_results=max_results * 5):
             url = r.get("href", "")
-            if url not in seen_urls:
+            if url not in seen_urls and is_url_accessible(url) and is_recent_article(url):
                 seen_urls.add(url)
                 results.append({
                     "title": r.get("title", ""),
@@ -21,10 +47,26 @@ def search_ai_news(query="AI news latest", max_results=5):
                 })
                 if len(results) >= max_results:
                     break
-            time.sleep(1)
+            time.sleep(0.5)
     except Exception as e:
         print(f"搜索出错: {e}")
     return results
+
+def is_url_accessible(url):
+    """检查URL是否可访问且为有效文章"""
+    # 过滤分类页、标签页、列表页等非文章URL
+    excluded_patterns = [
+        '/category/', '/tag/', '/tags/', '/topics/', '/author/', '/page/',
+        '/tagged/', '/news/', '/headlines/', '/ai-news', '/blog/', '/archive/'
+    ]
+    if any(pattern in url.lower() for pattern in excluded_patterns):
+        return False
+
+    try:
+        response = requests.head(url, timeout=5, allow_redirects=True)
+        return response.status_code < 400
+    except:
+        return False
 
 def translate_to_chinese(text):
     """将英文文本翻译成中文"""
@@ -35,7 +77,8 @@ def translate_to_chinese(text):
             messages=[{'role': 'user', 'content': f'提取以下AI资讯的核心观点和关键信息,用中文总结成2-3句话,突出新闻价值:\n{text}'}]
         )
         return response['message']['content']
-    except:
+    except Exception as e:
+        print(f"翻译失败: {e}")
         return text
 
 def scrape_article_content(url):
@@ -73,22 +116,39 @@ def extract_source(url):
     return domain.capitalize()
 
 def get_topic_emoji(title, summary):
-    """根据标题和摘要推断主题emoji"""
+    """根据标题和摘要推断主题分类标签"""
     text = (title + ' ' + summary).lower()
 
-    # 按优先级匹配关键词
-    if any(word in text for word in ['融资', '投资', '收购', 'funding', 'investment', 'acquisition']):
-        return '💰'
-    elif any(word in text for word in ['发布', '推出', 'launch', 'release', 'announce']):
-        return '🚀'
-    elif any(word in text for word in ['监管', '法规', '政策', 'regulation', 'policy', 'law']):
-        return '⚖️'
-    elif any(word in text for word in ['突破', '创新', 'breakthrough', 'innovation']):
-        return '🔬'
-    elif any(word in text for word in ['模型', 'gpt', 'llm', 'model', 'ai']):
-        return '🤖'
+    if any(word in text for word in ['chip', 'gpu', 'nvidia', 'amd', '芯片', '硬件', 'hardware']):
+        return '🖥️ 芯片/硬件'
+    elif any(word in text for word in ['regulation', 'policy', 'law', '监管', '法规', '政策', '伦理']):
+        return '📜 政策/伦理'
+    elif any(word in text for word in ['funding', 'investment', 'acquisition', 'company', '融资', '投资', '收购', '公司', '产业']):
+        return '🏭 产业/公司'
+    elif any(word in text for word in ['weekly', 'brief', 'roundup', '周报', '深度']):
+        return '📊 周报/深度'
     else:
-        return '📰'
+        return '🧠 模型/技术'
+
+def is_encyclopedia_article(title, summary, url):
+    """判断是否为百科类文章"""
+    text = (title + ' ' + summary).lower()
+    return any(keyword in url.lower() for keyword in ['britannica', 'wikipedia', 'definition']) or \
+           any(keyword in text for keyword in ['refers to', 'is defined as', '是指', '定义为'])
+
+def generate_daily_insight(news_items):
+    """生成今日一句话判断"""
+    from ollama import chat
+    try:
+        titles = '\n'.join([f"{i+1}. {item['title']}" for i, item in enumerate(news_items[:3])])
+        response = chat(
+            model='mistral-nemo:latest',
+            messages=[{'role': 'user', 'content': f'基于以下3条AI新闻标题，用一句话(20-30字)总结今日AI行业的核心趋势或要点:\n{titles}\n\n要求：简洁、有洞察力、突出最重要的信号'}]
+        )
+        insight = response['message']['content'].strip()
+        return truncate_text(insight, 50)
+    except:
+        return "AI行业持续快速发展，多个领域取得重要进展。"
 
 def truncate_text(text, max_len):
     """智能截断文本,在标点符号处截断"""
@@ -107,50 +167,93 @@ def send_to_feishu(news_items):
     from datetime import datetime
     date = datetime.now().strftime("%Y.%m.%d")
 
-    # 生成3个要点
-    key_points = "\n".join([f"• {truncate_text(clean_title(item['title']), 50)}" for item in news_items[:3]])
+    # 分离百科类文章和正常文章
+    encyclopedia_items = []
+    main_items = []
+    for item in news_items:
+        if is_encyclopedia_article(item['title'], item['summary'], item['url']):
+            encyclopedia_items.append(item)
+        else:
+            main_items.append(item)
 
-    # 顶部总览卡片
-    overview_card = {
-        "msg_type": "interactive",
-        "card": {
-            "header": {"title": {"tag": "plain_text", "content": f"🤖 AI资讯日报 | {date}"}, "template": "blue"},
-            "elements": [
-                {"tag": "div", "text": {"tag": "plain_text", "content": f"今日精选 {len(news_items)} 条AI行业重要资讯"}},
-                {"tag": "div", "text": {"tag": "lark_md", "content": key_points}}
-            ]
-        }
-    }
+    # 生成今日一句话判断
+    daily_insight = generate_daily_insight(main_items[:3])
 
-    # 发送总览卡片
-    resp = requests.post(FEISHU_WEBHOOK_URL, json=overview_card)
-    print(f"发送总览卡片: {resp.status_code}")
-    time.sleep(0.5)
+    # 构建文章列表元素
+    elements = [
+        {"tag": "div", "text": {"tag": "plain_text", "content": f"今日精选 {len(main_items)} 条AI行业重要资讯"}},
+        {"tag": "div", "text": {"tag": "plain_text", "content": f"🧠 今日AI要点：{daily_insight}"}}
+    ]
 
-    # Top文章卡片
-    for idx, item in enumerate(news_items, 1):
+    # 添加标题摘要列表
+    title_list = []
+    for item in main_items:
+        title = truncate_text(clean_title(item['title']), 80)
+        category = get_topic_emoji(item['title'], item['summary'])
+        title_list.append(f"• {category} | {title}")
+
+    elements.append({
+        "tag": "div",
+        "text": {"tag": "plain_text", "content": "\n".join(title_list)}
+    })
+    elements.append({"tag": "hr"})
+
+    # 添加每篇文章
+    for idx, item in enumerate(main_items, 1):
         title = truncate_text(clean_title(item['title']), 80)
         summary = truncate_text(item['summary'], 150)
         source = extract_source(item['url'])
-        emoji = get_topic_emoji(item['title'], item['summary'])
+        category = get_topic_emoji(item['title'], item['summary'])
 
-        article_card = {
-            "msg_type": "interactive",
-            "card": {
-                "header": {"title": {"tag": "plain_text", "content": f"{emoji} Top文章 {idx}"}, "template": "grey"},
-                "elements": [
-                    {"tag": "div", "text": {"tag": "lark_md", "content": f"**{title}**"}},
-                    {"tag": "div", "text": {"tag": "plain_text", "content": summary}},
-                    {"tag": "note", "elements": [{"tag": "plain_text", "content": f"来源: {source}"}]},
-                    {"tag": "action", "actions": [{"tag": "button", "text": {"tag": "plain_text", "content": "阅读原文"}, "type": "primary", "url": item['url']}]}
-                ]
-            }
+        # 第一条加焦点标识
+        if idx == 1:
+            title_display = f"🔥 今日焦点｜{title}"
+        else:
+            title_display = title
+
+        # 文章标题和摘要合并
+        elements.append({
+            "tag": "div",
+            "text": {"tag": "lark_md", "content": f"**{category} | {title_display}**\n{summary}"}
+        })
+        # 来源和按钮
+        elements.append({
+            "tag": "action",
+            "actions": [
+                {"tag": "button", "text": {"tag": "plain_text", "content": f"阅读原文 · {source}"}, "type": "default", "url": item['url']}
+            ]
+        })
+        # 分隔线(最后一篇不加)
+        if idx < len(main_items):
+            elements.append({"tag": "hr"})
+
+    # 添加延伸阅读区
+    if encyclopedia_items:
+        elements.append({"tag": "hr"})
+        elements.append({
+            "tag": "div",
+            "text": {"tag": "plain_text", "content": "📎 延伸阅读"}
+        })
+        for item in encyclopedia_items:
+            title = truncate_text(clean_title(item['title']), 60)
+            source = extract_source(item['url'])
+            elements.append({
+                "tag": "div",
+                "text": {"tag": "lark_md", "content": f"[{title}]({item['url']}) · {source}"}
+            })
+
+    # 单个卡片包含所有内容
+    card = {
+        "msg_type": "interactive",
+        "card": {
+            "header": {"title": {"tag": "plain_text", "content": f"🤖 AI资讯日报 | {date}"}, "template": "blue"},
+            "elements": elements
         }
-        resp = requests.post(FEISHU_WEBHOOK_URL, json=article_card)
-        print(f"发送文章 {idx}: {resp.status_code}")
-        time.sleep(0.5)
+    }
 
-    return True
+    resp = requests.post(FEISHU_WEBHOOK_URL, json=card)
+    print(f"发送卡片: {resp.status_code}")
+    return resp.status_code == 200
 
 def main():
     import sys
