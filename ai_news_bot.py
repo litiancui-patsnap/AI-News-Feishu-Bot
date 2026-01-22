@@ -54,11 +54,13 @@ def search_ai_news(query="AI news latest", max_results=5):
 
 def is_url_accessible(url):
     """检查URL是否可访问且为有效文章"""
-    # 过滤分类页、标签页、列表页等非文章URL
+    # 过滤分类页、标签页、列表页、新闻汇总等非文章URL
     excluded_patterns = [
-        '/category/', '/tag/', '/tags/', '/topics/', '/author/', '/page/',
-        '/tagged/', '/news/', '/headlines/', '/ai-news', '/blog/', '/archive/'
-    ]
+    '/category/', '/tag/', '/tags/', '/topics/', '/author/', '/page/',
+    '/tagged/', '/news/', '/headlines/', '/ai-news', '/blog/', '/archive/',
+    'roundup', 'weekly'
+]
+
     if any(pattern in url.lower() for pattern in excluded_patterns):
         return False
 
@@ -90,7 +92,10 @@ def scrape_article_content(url):
     }
 
     smart_scraper = SmartScraperGraph(
-        prompt="用中文总结这篇文章的核心内容，包括主要观点和关键信息，限制在150字以内",
+        prompt="""请用中文生成一段"读完即够"的AI资讯摘要：
+优先提炼文章的核心结论、最新信息和实际影响，忽略背景铺垫、作者介绍、广告和无关内容。
+用2–3句话完整表达"发生了什么 + 为什么重要/影响谁"，如有明确数据、时间或主体请保留。
+总字数不超过150字。""",
         source=url,
         config=graph_config
     )
