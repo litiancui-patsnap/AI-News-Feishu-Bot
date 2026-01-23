@@ -10,6 +10,8 @@ OLLAMA_CONFIG = {
 }
 
 FEISHU_WEBHOOK_URL = os.getenv("FEISHU_WEBHOOK_URL", "")
+FEISHU_APP_ID = os.getenv("FEISHU_APP_ID", "")
+FEISHU_APP_SECRET = os.getenv("FEISHU_APP_SECRET", "")
 
 # 可配置参数
 MAX_NEWS_ITEMS = int(os.getenv("MAX_NEWS_ITEMS", "3"))  # 每日推送资讯数量

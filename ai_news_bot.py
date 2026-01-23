@@ -1,9 +1,10 @@
 from scrapegraphai.graphs import SmartScraperGraph
 from ddgs import DDGS
-from config import OLLAMA_CONFIG, FEISHU_WEBHOOK_URL, MAX_NEWS_ITEMS, SEARCH_QUERY
+from config import OLLAMA_CONFIG, FEISHU_WEBHOOK_URL, FEISHU_APP_ID, FEISHU_APP_SECRET, MAX_NEWS_ITEMS, SEARCH_QUERY
 import requests
 import time
 from datetime import datetime
+import os
 
 def is_recent_article(url):
     """检查文章是否为最近3天内的"""
@@ -167,6 +168,68 @@ def truncate_text(text, max_len):
             return truncated[:last_punct + 1]
     return truncated + "..."
 
+def get_tenant_access_token():
+    """获取飞书tenant_access_token"""
+    if not FEISHU_APP_ID or not FEISHU_APP_SECRET:
+        return None
+
+    url = "https://open.feishu.cn/open-apis/auth/v3/tenant_access_token/internal"
+    headers = {"Content-Type": "application/json"}
+    data = {
+        "app_id": FEISHU_APP_ID,
+        "app_secret": FEISHU_APP_SECRET
+    }
+
+    try:
+        response = requests.post(url, json=data, headers=headers)
+        result = response.json()
+        if result.get("code") == 0:
+            return result.get("tenant_access_token")
+        else:
+            print(f"获取token失败: {result.get('msg')}")
+            return None
+    except Exception as e:
+        print(f"获取token异常: {e}")
+        return None
+
+def upload_image_to_feishu(image_path):
+    """上传图片到飞书并返回image_key"""
+    token = get_tenant_access_token()
+    if not token:
+        print("无法获取飞书访问令牌，跳过图片上传")
+        return None
+
+    if not os.path.exists(image_path):
+        print(f"图片文件不存在: {image_path}")
+        return None
+
+    url = "https://open.feishu.cn/open-apis/im/v1/images"
+    headers = {
+        "Authorization": f"Bearer {token}"
+    }
+
+    try:
+        with open(image_path, 'rb') as f:
+            files = {
+                'image': (os.path.basename(image_path), f, 'image/png')
+            }
+            data = {
+                'image_type': 'message'
+            }
+            response = requests.post(url, headers=headers, files=files, data=data)
+            result = response.json()
+
+            if result.get("code") == 0:
+                image_key = result.get("data", {}).get("image_key")
+                print(f"图片上传成功: {image_key}")
+                return image_key
+            else:
+                print(f"图片上传失败: {result.get('msg')}")
+                return None
+    except Exception as e:
+        print(f"图片上传异常: {e}")
+        return None
+
 def send_to_feishu(news_items):
     """发送卡片消息到飞书"""
     from datetime import datetime
@@ -184,13 +247,32 @@ def send_to_feishu(news_items):
     # 生成今日一句话判断
     daily_insight = generate_daily_insight(main_items[:3])
 
+    # 上传首图并获取image_key
+    banner_path = os.path.join(os.path.dirname(__file__), "images", "ai_banner.png")
+    image_key = upload_image_to_feishu(banner_path)
+
     # 构建文章列表元素
-    elements = [
-        # 暂时移除首图功能（飞书不支持外部URL图片，需要先上传获取image_key）
-        # TODO: 实现图片上传到飞书服务器的功能
+    elements = []
+
+    # 如果成功上传图片，添加首图
+    if image_key:
+        elements.append({
+            "tag": "img",
+            "img_key": image_key,
+            "alt": {
+                "tag": "plain_text",
+                "content": "AI资讯日报"
+            },
+            "mode": "crop_center",  # 使用居中裁剪模式，高度更小
+            "preview": True
+        })
+        elements.append({"tag": "hr"})
+
+    # 添加摘要信息
+    elements.extend([
         {"tag": "div", "text": {"tag": "plain_text", "content": f"今日精选 {len(main_items)} 条AI行业重要资讯"}},
         {"tag": "div", "text": {"tag": "plain_text", "content": f"🧠 今日AI要点：{daily_insight}"}}
-    ]
+    ])
 
     # 添加标题摘要列表
     title_list = []
