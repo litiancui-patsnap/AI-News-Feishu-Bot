@@ -186,18 +186,8 @@ def send_to_feishu(news_items):
 
     # 构建文章列表元素
     elements = [
-        # 首图
-        {
-            "tag": "img",
-            "img_key": "https://raw.githubusercontent.com/litiancui-patsnap/AI-News-Feishu-Bot/main/images/ai_banner.png",
-            "alt": {
-                "tag": "plain_text",
-                "content": "AI资讯日报"
-            },
-            "mode": "fit_horizontal",
-            "preview": True
-        },
-        {"tag": "hr"},
+        # 暂时移除首图功能（飞书不支持外部URL图片，需要先上传获取image_key）
+        # TODO: 实现图片上传到飞书服务器的功能
         {"tag": "div", "text": {"tag": "plain_text", "content": f"今日精选 {len(main_items)} 条AI行业重要资讯"}},
         {"tag": "div", "text": {"tag": "plain_text", "content": f"🧠 今日AI要点：{daily_insight}"}}
     ]
