@@ -4,8 +4,8 @@
 AI 新闻信息图生成器
 
 功能：
-- 根据新闻内容生成专属信息图
-- 调用 Node.js 图片生成脚本
+- 优先使用模板系统（Pillow）生成信息图
+- 备用方案：调用 Node.js 图片生成脚本（需要 API）
 - 支持多种视觉风格
 """
 
@@ -14,6 +14,55 @@ import json
 import subprocess
 import sys
 from pathlib import Path
+from datetime import datetime
+
+
+# 尝试导入模板生成器
+try:
+    from generate_infographic_template import generate_infographic_template
+    TEMPLATE_AVAILABLE = True
+except ImportError:
+    TEMPLATE_AVAILABLE = False
+    print("警告：模板系统不可用，将使用 API 方式")
+
+
+def generate_infographic_for_news(news_item, output_dir=None, use_template=True):
+    """
+    为新闻生成信息图
+
+    Args:
+        news_item: 新闻数据字典
+        output_dir: 输出目录，默认为 ./images/generated
+        use_template: 是否使用模板系统（默认 True）
+
+    Returns:
+        str: 生成的图片路径，失败返回 None
+    """
+    # 设置输出目录
+    if output_dir is None:
+        output_dir = os.path.join(os.path.dirname(__file__), "images", "generated")
+
+    # 确保输出目录存在
+    os.makedirs(output_dir, exist_ok=True)
+
+    # 方案 1：使用模板系统（推荐）
+    if use_template and TEMPLATE_AVAILABLE:
+        print("使用模板系统生成信息图...")
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_path = os.path.join(output_dir, f"infographic_{timestamp}.jpg")
+
+        try:
+            result = generate_infographic_template(news_item, output_path)
+            if result:
+                print(f"信息图生成成功: {result}")
+                return result
+            else:
+                print("模板系统生成失败，尝试使用 API 方式...")
+        except Exception as e:
+            print(f"模板系统出错: {str(e)}，尝试使用 API 方式...")
+
+    # 方案 2：使用 API 方式（备用）
+    return generate_infographic_api(news_item, output_dir)
 
 
 def build_infographic_prompt(news_item):
@@ -46,61 +95,52 @@ def build_infographic_prompt(news_item):
     numbers = re.findall(r'\d+(?:\.\d+)?%?', summary)
     key_numbers = ', '.join(numbers[:3]) if numbers else ''
 
-    prompt = f"""创建一张专业的中文AI资讯信息图（infographic）：
+    # 简化标题（去除过长的内容）
+    title_short = title[:60] + '...' if len(title) > 60 else title
 
-【标题】{title}
+    # 提取摘要关键点（最多3个句子）
+    summary_sentences = summary.split('。')[:3]
+    summary_short = '。'.join(summary_sentences) + '。' if summary_sentences else summary
 
-【核心内容】{summary}
+    prompt = f"""一张中文AI资讯信息图（infographic），主题为：「{title_short}」
 
-【设计要求】
-- 整体风格：{style}
-- 布局：横向构图（16:9比例），适合社交媒体分享
-- 顶部区域：
-  * 大标题，使用粗体醒目字体
+整体风格：清晰、现代、专业、{style}、扁平插画风格、蓝色+浅灰色为主色，点缀橙色强调重点、横向构图（16:9），适合社交媒体分享。
+
+画面结构从左到右分区：
+- 左侧标题区：
+  * 大标题：{title_short}
   * 分类标签：{category}
-- 中部区域：
-  * 2-3个关键要点，用图标或数字标注
-  * 如有数据：{key_numbers if key_numbers else '突出核心观点'}
-- 底部区域：
-  * 来源标识"AI资讯日报"
-  * 日期标记
-- 配色方案：
-  * 主色调：蓝色系（#2E5BFF, #4A90E2）
-  * 强调色：橙色（#FF6B35）用于重点信息
-  * 背景：白色或浅灰色（#F5F7FA）
-- 文字要求：
-  * 中文为主，技术术语保留英文
-  * 字体层次清晰：标题>要点>说明
-  * 避免文字过多，保持简洁
-- 视觉元素：
-  * 扁平化图标
-  * 简洁的几何图形
-  * 适当的留白
+  * 日期：今日焦点
 
-【整体感觉】
-专业但不严肃，信息密度适中，一眼能抓住核心要点，适合快速阅读和分享。"""
+- 中部内容区：
+  * 核心观点：{summary_short}
+  * 关键数据：{key_numbers if key_numbers else '突出重点信息'}
+  * 用图标或数字标注要点
+
+- 右侧标识区：
+  * 来源："AI资讯日报"
+  * 简洁的AI图标或logo
+
+配色方案：主色调蓝色系，强调色橙色，背景白色或浅灰。
+文字要求：中文为主，技术术语保留英文，字体清晰易读。
+视觉元素：扁平化图标、简洁几何图形、适当留白。
+
+整体感觉：专业但不严肃，信息密度适中，一眼能抓住核心要点，适合快速阅读和分享。"""
 
     return prompt
 
 
-def generate_infographic_for_news(news_item, output_dir=None):
+def generate_infographic_api(news_item, output_dir):
     """
-    为新闻生成信息图
+    使用 API 方式生成信息图（备用方案）
 
     Args:
         news_item: 新闻数据字典
-        output_dir: 输出目录，默认为 ./images/generated
+        output_dir: 输出目录
 
     Returns:
         str: 生成的图片路径，失败返回 None
     """
-    # 设置输出目录
-    if output_dir is None:
-        output_dir = os.path.join(os.path.dirname(__file__), "images", "generated")
-
-    # 确保输出目录存在
-    os.makedirs(output_dir, exist_ok=True)
-
     # 构建 prompt
     prompt = build_infographic_prompt(news_item)
 
