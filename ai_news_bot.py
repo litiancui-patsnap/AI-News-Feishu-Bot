@@ -1,10 +1,11 @@
 from scrapegraphai.graphs import SmartScraperGraph
 from ddgs import DDGS
-from config import OLLAMA_CONFIG, FEISHU_WEBHOOK_URL, FEISHU_APP_ID, FEISHU_APP_SECRET, MAX_NEWS_ITEMS, SEARCH_QUERY
+from config import OLLAMA_CONFIG, FEISHU_WEBHOOK_URL, FEISHU_APP_ID, FEISHU_APP_SECRET, MAX_NEWS_ITEMS, SEARCH_QUERY, ENABLE_INFOGRAPHIC, INFOGRAPHIC_OUTPUT_DIR
 import requests
 import time
 from datetime import datetime
 import os
+from generate_news_infographic import generate_infographic_for_news
 
 def is_recent_article(url):
     """检查文章是否为最近3天内的"""
@@ -247,9 +248,32 @@ def send_to_feishu(news_items):
     # 生成今日一句话判断
     daily_insight = generate_daily_insight(main_items[:3])
 
-    # 上传首图并获取image_key
-    banner_path = os.path.join(os.path.dirname(__file__), "images", "ai_banner.png")
-    image_key = upload_image_to_feishu(banner_path)
+    # 为今日焦点生成信息图
+    image_key = None
+    if ENABLE_INFOGRAPHIC and main_items:
+        focus_news = main_items[0]  # 第一条新闻
+        focus_news['category'] = get_topic_emoji(focus_news['title'], focus_news['summary'])
+
+        print("正在为今日焦点生成信息图...")
+        try:
+            infographic_path = generate_infographic_for_news(focus_news, INFOGRAPHIC_OUTPUT_DIR)
+
+            if infographic_path and os.path.exists(infographic_path):
+                print(f"信息图生成成功: {infographic_path}")
+                image_key = upload_image_to_feishu(infographic_path)
+            else:
+                print("信息图生成失败，使用默认首图")
+                banner_path = os.path.join(os.path.dirname(__file__), "images", "ai_banner.png")
+                image_key = upload_image_to_feishu(banner_path)
+        except Exception as e:
+            print(f"生成信息图时出错: {e}，使用默认首图")
+            banner_path = os.path.join(os.path.dirname(__file__), "images", "ai_banner.png")
+            image_key = upload_image_to_feishu(banner_path)
+    else:
+        # 未启用信息图生成，使用默认首图
+        print("信息图生成已禁用，使用默认首图")
+        banner_path = os.path.join(os.path.dirname(__file__), "images", "ai_banner.png")
+        image_key = upload_image_to_feishu(banner_path)
 
     # 构建文章列表元素
     elements = []
