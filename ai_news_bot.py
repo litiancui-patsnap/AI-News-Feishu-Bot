@@ -233,7 +233,7 @@ def upload_image_to_feishu(image_path):
 def send_to_feishu(news_items):
     """发送卡片消息到飞书"""
     from datetime import datetime
-    date = datetime.now().strftime("%Y.%m.%d")
+    date = datetime.now().strftime("%Y/%m/%d")
 
     # 分离百科类文章和正常文章
     encyclopedia_items = []
@@ -263,16 +263,18 @@ def send_to_feishu(news_items):
                 "tag": "plain_text",
                 "content": "AI资讯日报"
             },
-            "mode": "crop_center",  # 使用居中裁剪模式，高度更小
+            "mode": "compact_horizontal",  # 使用紧凑模式，高度最小
             "preview": True
         })
-        elements.append({"tag": "hr"})
 
-    # 添加摘要信息
-    elements.extend([
-        {"tag": "div", "text": {"tag": "plain_text", "content": f"今日精选 {len(main_items)} 条AI行业重要资讯"}},
-        {"tag": "div", "text": {"tag": "plain_text", "content": f"🧠 今日AI要点：{daily_insight}"}}
-    ])
+    # 添加摘要信息（合并为一个元素）
+    elements.append({
+        "tag": "div",
+        "text": {
+            "tag": "plain_text",
+            "content": f"今日精选 {len(main_items)} 条AI行业重要资讯\n🧠 今日AI要点：{daily_insight}"
+        }
+    })
 
     # 添加标题摘要列表
     title_list = []
@@ -300,17 +302,13 @@ def send_to_feishu(news_items):
         else:
             title_display = title
 
-        # 文章标题和摘要合并
+        # 文章标题、摘要和来源链接合并为一个元素
         elements.append({
             "tag": "div",
-            "text": {"tag": "lark_md", "content": f"**{category} | {title_display}**\n{summary}"}
-        })
-        # 来源和按钮
-        elements.append({
-            "tag": "action",
-            "actions": [
-                {"tag": "button", "text": {"tag": "plain_text", "content": f"阅读原文 · {source}"}, "type": "default", "url": item['url']}
-            ]
+            "text": {
+                "tag": "lark_md",
+                "content": f"**{category} | {title_display}**  [阅读原文 · {source}]({item['url']})\n{summary}"
+            }
         })
         # 分隔线(最后一篇不加)
         if idx < len(main_items):
@@ -335,7 +333,14 @@ def send_to_feishu(news_items):
     card = {
         "msg_type": "interactive",
         "card": {
-            "header": {"title": {"tag": "plain_text", "content": f"🤖 AI资讯日报 | {date}"}, "template": "blue"},
+            "header": {
+                "title": {"tag": "lark_md", "content": f"AI资讯日报 | <font color='orange'>{date}</font>"},
+                "template": "blue",
+                "ud_icon": {
+                    "tag": "img",
+                    "img_key": "img_v3_02u7_3dfb2d58-1885-400f-9278-4c049e5d908g"
+                }
+            },
             "elements": elements
         }
     }

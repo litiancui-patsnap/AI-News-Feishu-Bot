@@ -77,24 +77,14 @@ def test_send_card_with_image(image_key):
                         "tag": "plain_text",
                         "content": "AI资讯日报"
                     },
-                    "mode": "crop_center",  # 使用居中裁剪模式，高度更小
+                    "mode": "compact_horizontal",  # 使用紧凑模式，高度最小
                     "preview": True
                 },
                 {
-                    "tag": "hr"
-                },
-                {
                     "tag": "div",
                     "text": {
-                        "content": "✅ 首图功能测试成功！",
-                        "tag": "plain_text"
-                    }
-                },
-                {
-                    "tag": "div",
-                    "text": {
-                        "content": f"image_key: {image_key}",
-                        "tag": "plain_text"
+                        "tag": "lark_md",
+                        "content": f"✅ 首图功能测试成功！\n\nimage_key: `{image_key}`\n\n[查看测试链接](https://www.feishu.cn)"
                     }
                 }
             ]
