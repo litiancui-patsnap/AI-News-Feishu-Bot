@@ -320,20 +320,44 @@ def send_to_feishu(news_items):
         source = extract_source(item['url'])
         category = get_topic_emoji(item['title'], item['summary'])
 
-        # 第一条加焦点标识
+        # 第一条加焦点标识，使用更醒目的格式
         if idx == 1:
-            title_display = f"🔥 今日焦点｜{title}"
-        else:
-            title_display = title
+            # 使用 markdown 实现左右布局效果
+            elements.append({
+                "tag": "div",
+                "text": {
+                    "tag": "lark_md",
+                    "content": f"**{category}**                                                    **🔥 今日焦点**"
+                }
+            })
 
-        # 文章标题、摘要和来源链接合并为一个元素
-        elements.append({
-            "tag": "div",
-            "text": {
-                "tag": "lark_md",
-                "content": f"**{category} | {title_display}**  [阅读原文 · {source}]({item['url']})\n{summary}"
-            }
-        })
+            # 标题（不再重复分类和焦点标签）
+            elements.append({
+                "tag": "div",
+                "text": {
+                    "tag": "lark_md",
+                    "content": f"**{title}**  [阅读原文 · {source}]({item['url']})"
+                }
+            })
+
+            # 核心观点区域 - 使用带背景的 div 突出显示
+            elements.append({
+                "tag": "div",
+                "text": {
+                    "tag": "lark_md",
+                    "content": f"```\n核心观点与关键信息：\n{summary}\n```"
+                }
+            })
+        else:
+            # 其他文章保持原样
+            elements.append({
+                "tag": "div",
+                "text": {
+                    "tag": "lark_md",
+                    "content": f"**{category} | {title}**  [阅读原文 · {source}]({item['url']})\n{summary}"
+                }
+            })
+
         # 分隔线(最后一篇不加)
         if idx < len(main_items):
             elements.append({"tag": "hr"})
