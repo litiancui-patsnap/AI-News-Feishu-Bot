@@ -94,10 +94,31 @@ def scrape_article_content(url):
     }
 
     smart_scraper = SmartScraperGraph(
-        prompt="""请用中文生成一段"读完即够"的AI资讯摘要：
-优先提炼文章的核心结论、最新信息和实际影响，忽略背景铺垫、作者介绍、广告和无关内容。
-用2–3句话完整表达"发生了什么 + 为什么重要/影响谁"，如有明确数据、时间或主体请保留。
-总字数不超过150字。""",
+        prompt="""请用中文生成一段精准的AI资讯摘要，要求：
+
+1. 核心信息提取：
+   - 明确指出"谁"（公司/机构/人物）
+   - 明确说明"做了什么"（具体行动/发布/决策）
+   - 明确时间（如果文章提到具体日期，必须包含）
+   - 关键数据（性能提升百分比、融资金额、用户数等）
+
+2. 避免模糊表述：
+   - 不要使用"最近"、"近期"等模糊时间词
+   - 不要使用"某公司"、"该技术"等指代不明的词
+   - 避免泛泛而谈的背景介绍
+
+3. 突出新闻价值：
+   - 这条新闻的独特之处是什么？
+   - 与之前的类似新闻有何不同？
+   - 对行业/用户的具体影响是什么？
+
+4. 格式要求：
+   - 2-3句话，每句话表达一个完整观点
+   - 总字数不超过150字
+   - 使用具体的名词和动词，避免形容词堆砌
+
+示例格式：
+[公司名]于[具体时间]发布[具体产品/技术]，[关键特性/数据]。该[产品/技术]主要解决[具体问题]，预计将[具体影响]。[补充信息：如价格/发布时间/适用场景等]。""",
         source=url,
         config=graph_config
     )
@@ -146,15 +167,41 @@ def is_encyclopedia_article(title, summary, url):
 def generate_daily_insight(news_items):
     """生成今日一句话判断"""
     from ollama import chat
+    from datetime import datetime
     try:
-        titles = '\n'.join([f"{i+1}. {item['title']}" for i, item in enumerate(news_items[:3])])
+        # 获取当前日期，增加时间上下文
+        today = datetime.now().strftime("%Y年%m月%d日")
+
+        # 构建更详细的新闻信息
+        news_details = '\n'.join([
+            f"{i+1}. 标题：{item['title']}\n   摘要：{item.get('summary', '')[:100]}"
+            for i, item in enumerate(news_items[:3])
+        ])
+
         response = chat(
             model='mistral-nemo:latest',
-            messages=[{'role': 'user', 'content': f'基于以下3条AI新闻标题，用一句话(20-30字)总结今日AI行业的核心趋势或要点:\n{titles}\n\n要求：简洁、有洞察力、突出最重要的信号'}]
+            messages=[{'role': 'user', 'content': f'''今天是{today}，请基于以下3条AI新闻，生成一句独特的行业洞察：
+
+{news_details}
+
+要求：
+1. 必须提及具体的公司名、技术名或事件（不要泛泛而谈）
+2. 突出今日新闻的独特性（与昨日不同的地方）
+3. 20-35字，简洁有力
+4. 避免使用"持续"、"不断"、"进一步"等模糊词
+5. 体现行业趋势或重要信号
+
+示例格式：
+- [公司]推出[技术]，[领域]竞争加剧
+- [技术方向]成焦点，[影响]值得关注
+- [事件]标志着[趋势]，行业格局生变'''}]
         )
         insight = response['message']['content'].strip()
+        # 移除引号和多余的标点
+        insight = insight.replace('"', '').replace('"', '').replace('"', '').strip('。！？')
         return truncate_text(insight, 50)
-    except:
+    except Exception as e:
+        print(f"生成今日洞察失败: {e}")
         return "AI行业持续快速发展，多个领域取得重要进展。"
 
 def truncate_text(text, max_len):
