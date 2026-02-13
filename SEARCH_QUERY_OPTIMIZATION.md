@@ -26,24 +26,24 @@
 ### 新关键词结构
 
 ```
-(OpenAI OR Google OR Meta OR Anthropic OR "AI model" OR GPT OR Gemini OR Claude)
-AND
-(launch OR release OR announce OR breakthrough OR funding)
-AND
-(2026 OR today OR latest)
+OpenAI Google Meta Anthropic AI model launch release 2026
 ```
+
+**重要说明：**
+- ❌ DuckDuckGo 不支持复杂的布尔运算符（AND、OR、括号）
+- ✅ 使用空格分隔的关键词，搜索引擎会自动匹配包含这些词的结果
+- ✅ 简洁但精准，聚焦主要 AI 公司和模型发布
 
 ### 关键词组成
 
 #### 1. 主体部分（公司/产品）
 ```
-OpenAI OR Google OR Meta OR Anthropic OR "AI model" OR GPT OR Gemini OR Claude
+OpenAI Google Meta Anthropic AI model
 ```
 
 **包含：**
 - ✅ 主要 AI 公司：OpenAI, Google, Meta, Anthropic
-- ✅ 通用术语："AI model"（带引号，精确匹配）
-- ✅ 主流产品：GPT, Gemini, Claude
+- ✅ 通用术语：AI model
 
 **优势：**
 - 聚焦行业头部公司和产品
@@ -52,15 +52,12 @@ OpenAI OR Google OR Meta OR Anthropic OR "AI model" OR GPT OR Gemini OR Claude
 
 #### 2. 动作部分（新闻类型）
 ```
-launch OR release OR announce OR breakthrough OR funding
+launch release
 ```
 
 **包含：**
 - ✅ launch（发布）
 - ✅ release（发布/释出）
-- ✅ announce（宣布）
-- ✅ breakthrough（突破）
-- ✅ funding（融资）
 
 **优势：**
 - 筛选出真正的"新闻"而非评论或教程
@@ -69,13 +66,11 @@ launch OR release OR announce OR breakthrough OR funding
 
 #### 3. 时效部分（时间范围）
 ```
-2026 OR today OR latest
+2026
 ```
 
 **包含：**
 - ✅ 2026（当前年份）
-- ✅ today（今日）
-- ✅ latest（最新）
 
 **优势：**
 - 确保搜到最新内容
@@ -104,10 +99,10 @@ launch OR release OR announce OR breakthrough OR funding
 - ✅ "OpenAI releases GPT-5"（相关新闻）
 
 **优化后主要搜到：**
-- ✅ "OpenAI announces GPT-5 launch"
-- ✅ "Google releases Gemini 2.0"
-- ✅ "Anthropic secures $500M funding"
-- ✅ "Meta unveils new AI breakthrough"
+- ✅ "Anthropic and OpenAI Release Dueling AI Models on the Same Day"
+- ✅ "Anthropic unveils new AI model as OpenAI rivalry heats up"
+- ✅ "AI Model Release Tracker | Complete Timeline 2022-2026"
+- ✅ "OpenAI, Google, Meta, Anthropic — What's Happening in LLM Race"
 
 ---
 
@@ -123,7 +118,7 @@ launch OR release OR announce OR breakthrough OR funding
 
 **优化后：**
 ```
-搜索词：(OpenAI OR Google) AND (launch OR release) AND (2026 OR today)
+搜索词：OpenAI Google Meta Anthropic AI model launch release 2026
 结果：聚焦最新发布和重要事件
 ```
 
@@ -157,31 +152,31 @@ launch OR release OR announce OR breakthrough OR funding
 #### 1. 扩展公司范围
 ```env
 # 添加更多公司
-SEARCH_QUERY=(OpenAI OR Google OR Meta OR Anthropic OR Microsoft OR Amazon OR Nvidia) AND ...
+SEARCH_QUERY=OpenAI Google Meta Anthropic Microsoft Amazon Nvidia AI model launch release 2026
 ```
 
 #### 2. 聚焦特定领域
 ```env
 # 聚焦大模型
-SEARCH_QUERY=(GPT OR Gemini OR Claude OR LLaMA) AND (launch OR release) AND (2026 OR today)
+SEARCH_QUERY=GPT Gemini Claude LLaMA AI model launch release 2026
 
 # 聚焦AI芯片
-SEARCH_QUERY=(Nvidia OR AMD OR "AI chip" OR TPU OR GPU) AND (launch OR release) AND (2026 OR today)
+SEARCH_QUERY=Nvidia AMD AI chip TPU GPU launch release 2026
 ```
 
 #### 3. 添加中文关键词
 ```env
 # 中英文混合
-SEARCH_QUERY=(OpenAI OR Google OR "人工智能" OR "大模型") AND (launch OR release OR "发布") AND (2026 OR today)
+SEARCH_QUERY=OpenAI Google 人工智能 大模型 发布 launch 2026
 ```
 
 #### 4. 调整新闻类型
 ```env
 # 只关注融资和收购
-SEARCH_QUERY=(OpenAI OR Google OR Meta) AND (funding OR acquisition OR investment) AND (2026 OR today)
+SEARCH_QUERY=OpenAI Google Meta funding acquisition investment 2026
 
 # 只关注产品发布
-SEARCH_QUERY=(OpenAI OR Google OR Meta) AND (launch OR release) AND (2026 OR today)
+SEARCH_QUERY=OpenAI Google Meta launch release 2026
 ```
 
 ---
@@ -192,12 +187,12 @@ SEARCH_QUERY=(OpenAI OR Google OR Meta) AND (launch OR release) AND (2026 OR tod
 
 **`.env` 文件：**
 ```env
-SEARCH_QUERY=(OpenAI OR Google OR Meta OR Anthropic OR "AI model" OR GPT OR Gemini OR Claude) AND (launch OR release OR announce OR breakthrough OR funding) AND (2026 OR today OR latest)
+SEARCH_QUERY=OpenAI Google Meta Anthropic AI model launch release 2026
 ```
 
 **`config.py` 文件：**
 ```python
-SEARCH_QUERY = os.getenv("SEARCH_QUERY", '(OpenAI OR Google OR Meta OR Anthropic OR "AI model" OR GPT OR Gemini OR Claude) AND (launch OR release OR announce OR breakthrough OR funding) AND (2026 OR today OR latest)')
+SEARCH_QUERY = os.getenv("SEARCH_QUERY", 'OpenAI Google Meta Anthropic AI model launch release 2026')
 ```
 
 ### 立即生效
@@ -219,16 +214,23 @@ python ai_news_bot.py
 
 ### 1. 搜索引擎限制
 
-不同搜索引擎对布尔运算符的支持可能不同：
-- DuckDuckGo：支持 AND, OR
-- Google：支持 AND, OR, ""（引号）
-- Bing：支持 AND, OR, ""（引号）
+DuckDuckGo 搜索引擎的特点：
+- ❌ 不支持复杂的布尔运算符（AND、OR、括号）
+- ✅ 支持空格分隔的关键词
+- ✅ 支持引号精确匹配（但会限制结果数量）
+- ⚠️ 过长的关键词可能被截断
+
+**推荐做法：**
+- 使用空格分隔关键词
+- 保持关键词简洁（5-10个词）
+- 优先使用最重要的关键词
 
 ### 2. 关键词长度
 
-过长的关键词可能被截断，建议：
-- 保持在 200 字符以内
-- 优先保留最重要的关键词
+关键词长度建议：
+- ✅ 保持在 5-10 个词
+- ✅ 优先保留最重要的关键词
+- ❌ 避免过长导致搜索失败
 
 ### 3. 定期更新
 
