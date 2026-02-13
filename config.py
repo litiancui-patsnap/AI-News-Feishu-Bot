@@ -15,7 +15,7 @@ FEISHU_APP_SECRET = os.getenv("FEISHU_APP_SECRET", "")
 
 # 可配置参数
 MAX_NEWS_ITEMS = int(os.getenv("MAX_NEWS_ITEMS", "3"))  # 每日推送资讯数量
-SEARCH_QUERY = os.getenv("SEARCH_QUERY", "AI artificial intelligence news 2026")  # 搜索关键词
+SEARCH_QUERY = os.getenv("SEARCH_QUERY", '(OpenAI OR Google OR Meta OR Anthropic OR "AI model" OR GPT OR Gemini OR Claude) AND (launch OR release OR announce OR breakthrough OR funding) AND (2026 OR today OR latest)')  # 搜索关键词
 PUSH_TIME = os.getenv("PUSH_TIME", "9:50")  # 定时推送时间
 
 # 图片生成配置
