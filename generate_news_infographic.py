@@ -18,6 +18,8 @@ from datetime import datetime
 
 
 # 尝试导入模板生成器
+INFOGRAPHIC_API_FALLBACK = os.getenv("INFOGRAPHIC_API_FALLBACK", "false").lower() == "true"
+
 try:
     from generate_infographic_template import generate_infographic_template
     TEMPLATE_AVAILABLE = True
@@ -62,6 +64,10 @@ def generate_infographic_for_news(news_item, output_dir=None, use_template=True)
             print(f"模板系统出错: {str(e)}，尝试使用 API 方式...")
 
     # 方案 2：使用 API 方式（备用）
+    if not INFOGRAPHIC_API_FALLBACK:
+        print("API image fallback disabled; using default banner instead.")
+        return None
+
     return generate_infographic_api(news_item, output_dir)
 
 

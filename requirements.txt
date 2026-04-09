@@ -3,3 +3,6 @@ playwright
 ddgs
 requests
 python-dotenv
+openai
+ollama
+Pillow
