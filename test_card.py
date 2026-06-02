@@ -14,9 +14,9 @@ test_data = [
         "url": "https://example.com/smart-landscape-platform",
     },
     {
-        "title": "Three.js 三维地图用于园区绿化资产管理",
-        "summary": "某园区管理项目使用 Three.js 和 GIS 数据构建三维绿化资产台账，支持树木定位、养护记录和巡检问题追踪。",
-        "url": "https://example.com/threejs-green-asset-management",
+        "title": "3DGS 三维重建用于园区绿化资产管理",
+        "summary": "某园区管理项目使用 3DGS 和 GIS 数据构建三维绿化资产台账，支持树木定位、养护记录和巡检问题追踪。",
+        "url": "https://example.com/3dgs-green-asset-management",
     },
     {
         "title": "空间大模型用于城市绿地识别试点",

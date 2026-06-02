@@ -58,7 +58,8 @@ SEARCH_QUERY = os.getenv(
     (
         "绿化养护 | 园林绿化 | 城市绿化 | 市政养护 绿化 | "
         "养护标准 绿化 | 绿化招标 | 智慧园林 | 智能灌溉 | 园林机械 | "
-        "3DJS WebGL 空间 | Three.js GIS 空间 | 空间大模型 | 数字孪生 三维重建"
+        "3DGS Gaussian Splatting | 3D Gaussian Splatting 空间 | GIS 空间 | "
+        "空间大模型 | 数字孪生 三维重建"
     ),
 )
 SEARCH_REGION = os.getenv("SEARCH_REGION", "cn-zh")

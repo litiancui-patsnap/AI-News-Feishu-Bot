@@ -51,7 +51,7 @@ card = {
                 "tag": "div",
                 "text": {
                     "tag": "plain_text",
-                    "content": "• 🌿 绿化养护 | 某市发布城市绿化养护标准\n• 🧠 智慧园林 | 智能灌溉平台接入巡检数据\n• 🧭 3DJS/空间大模型 | Three.js用于绿化资产管理"
+                    "content": "• 🌿 绿化养护 | 某市发布城市绿化养护标准\n• 🧠 智慧园林 | 智能灌溉平台接入巡检数据\n• 🧭 3DGS/空间大模型 | 3DGS用于绿化资产管理"
                 }
             },
             {
@@ -81,7 +81,7 @@ card = {
                 "tag": "div",
                 "text": {
                     "tag": "lark_md",
-                    "content": "**🧭 3DJS/空间大模型 | Three.js用于绿化资产管理**  [阅读原文 · 示例来源](https://example.com)\n园区项目使用 Three.js 和 GIS 数据构建三维绿化资产台账，支持树木定位和巡检问题追踪。"
+                    "content": "**🧭 3DGS/空间大模型 | 3DGS用于绿化资产管理**  [阅读原文 · 示例来源](https://example.com)\n园区项目使用 3DGS 和 GIS 数据构建三维绿化资产台账，支持树木定位和巡检问题追踪。"
                 }
             }
         ]

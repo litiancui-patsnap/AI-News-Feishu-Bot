@@ -123,8 +123,6 @@ INDUSTRY_SIGNAL_PATTERNS = (
     "物业绿化",
     "住建",
     "城管",
-    "3djs",
-    "three.js",
     "webgl",
     "gis",
     "bim",
@@ -916,7 +914,7 @@ def scrape_article_content(
 4. 不要写背景铺垫、评论性空话、行业常识
 5. 2-3 句话，总字数不超过 150 字
 6. 必须使用简体中文；公司名、产品名、模型名、英文缩写可保留英文
-7. 优先说明这条新闻对绿化养护、智慧园林、3DJS 或空间大模型的关系
+7. 优先说明这条新闻对绿化养护、智慧园林、3DGS 或空间大模型的关系
 8. 只输出摘要正文或 {SKIP_ARTICLE}，不要额外解释
 
 正文内容：
@@ -973,8 +971,6 @@ def get_topic_emoji(title: str, summary: str) -> str:
     if any(
         word in text
         for word in [
-            "3djs",
-            "three.js",
             "webgl",
             "cesium",
             "gis",
@@ -991,7 +987,7 @@ def get_topic_emoji(title: str, summary: str) -> str:
             "lidar",
         ]
     ):
-        return "🧭 3DJS/空间大模型"
+        return "🧭 3DGS/空间大模型"
     if any(
         word in text
         for word in ["regulation", "policy", "law", "监管", "法规", "政策", "标准", "住建", "城管"]
@@ -1059,7 +1055,7 @@ def generate_daily_insight(news_items: list[dict[str, str]]) -> str:
 
 要求：
 1. 必须点名具体公司、机构、城市、项目、技术或事件，不要泛泛而谈
-2. 必须体现今天这批新闻对绿化养护、智慧园林、3DJS 或空间大模型最特殊的共同信号
+2. 必须体现今天这批新闻对绿化养护、智慧园林、3DGS 或空间大模型最特殊的共同信号
 3. 20-35 字，简洁有力
 4. 避免使用“持续”“不断”“进一步”等模糊词
 5. 只输出一句话，不要解释""",

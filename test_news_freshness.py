@@ -14,9 +14,9 @@ def test_build_search_query_replaces_stale_year():
 
 
 def test_split_search_queries_supports_topic_groups():
-    assert bot.split_search_queries("绿化养护 | 3DJS 空间大模型") == [
+    assert bot.split_search_queries("绿化养护 | 3DGS 空间大模型") == [
         "绿化养护",
-        "3DJS 空间大模型",
+        "3DGS 空间大模型",
     ]
 
 

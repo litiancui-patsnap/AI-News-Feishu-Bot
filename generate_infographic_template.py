@@ -127,7 +127,7 @@ def generate_infographic_template(news_item, output_path):
                 'accent': (22, 163, 74),
                 'text': (33, 33, 33),
             },
-            '🧭 3DJS/空间大模型': {
+            '🧭 3DGS/空间大模型': {
                 'bg': (240, 248, 255),
                 'primary': (29, 78, 216),
                 'accent': (16, 185, 129),
