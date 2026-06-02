@@ -28,6 +28,28 @@ def test_extract_publication_date_from_html_meta():
     assert published_at == datetime(2026, 4, 8, 6, 30, tzinfo=timezone.utc)
 
 
+def test_clean_display_text_localizes_relative_time_prefix():
+    text = "1 week ago - " + "\u4ea4\u98de\u91cd\u5de5\u53d1\u5e03\u7eff\u7bf1\u4fee\u526a\u673a\u542f\u52a8\u6307\u5357"
+
+    cleaned = bot.clean_display_text(text)
+
+    assert "week ago" not in cleaned
+    assert cleaned.startswith("1\u5468\u524d\uff0c")
+
+
+def test_extract_summary_text_localizes_relative_time_prefix():
+    summary = bot.extract_summary_text(
+        {"summary": "2 days ago - " + "\u56ed\u6797\u673a\u68b0\u4f01\u4e1a\u63a8\u51fa\u65b0\u4ea7\u54c1"}
+    )
+
+    assert "days ago" not in summary
+    assert summary.startswith("2\u5929\u524d\uff0c")
+
+
+def test_format_published_date_localizes_unparsed_relative_label():
+    assert bot.format_published_date("last week") == "\u4e0a\u5468"
+
+
 def test_is_evergreen_result_blocks_tracker_pages():
     assert bot.is_evergreen_result(
         "AI Model Release Tracker | Complete Timeline 2022-2026",
@@ -59,6 +81,22 @@ def test_looks_like_industry_news_accepts_green_maintenance():
     assert bot.looks_like_industry_news(
         "某市发布城市绿化养护标准",
         "新标准覆盖修剪、灌溉和病虫害防治要求。",
+        "https://example.com/news/landscape-maintenance",
+    )
+
+
+def test_sendable_summary_rejects_too_short_text():
+    assert not bot.is_sendable_summary(
+        "某市发布城市绿化养护标准",
+        "内容较短。",
+        "https://example.com/news/landscape-maintenance",
+    )
+
+
+def test_sendable_summary_accepts_industry_chinese_text():
+    assert bot.is_sendable_summary(
+        "某市发布城市绿化养护标准",
+        "某市园林部门发布城市绿化养护标准，覆盖修剪、灌溉和病虫害防治等关键环节。",
         "https://example.com/news/landscape-maintenance",
     )
 

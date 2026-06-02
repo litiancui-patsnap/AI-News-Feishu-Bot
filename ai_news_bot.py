@@ -25,11 +25,14 @@ from config import (
     SEARCH_QUERY,
     SEARCH_REGION,
     SEARCH_TIME_LIMIT,
+    SUMMARY_MIN_CHARS,
 )
 from generate_news_infographic import generate_infographic_for_news
 from llm_client import call_llm
 
 SKIP_ARTICLE = "SKIP_ARTICLE"
+DEFAULT_BANNER_FILENAME = "industry_banner.png"
+LEGACY_BANNER_FILENAME = "ai_banner.png"
 HTTP_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -725,12 +728,104 @@ def contains_chinese(text: str) -> bool:
     return bool(re.search(r"[\u4e00-\u9fff]", text or ""))
 
 
+def count_content_chars(text: str) -> int:
+    return len(re.sub(r"\s+", "", text or ""))
+
+
+RELATIVE_TIME_UNITS_ZH = {
+    "minute": "\u5206\u949f",
+    "hour": "\u5c0f\u65f6",
+    "day": "\u5929",
+    "week": "\u5468",
+    "month": "\u4e2a\u6708",
+    "year": "\u5e74",
+}
+RELATIVE_TIME_NUMBER_WORDS = {"a": 1, "an": 1, "one": 1}
+
+
+def _relative_count_to_int(value: str) -> int:
+    lowered = value.lower()
+    if lowered in RELATIVE_TIME_NUMBER_WORDS:
+        return RELATIVE_TIME_NUMBER_WORDS[lowered]
+    return int(lowered)
+
+
+def localize_relative_time_label(value: str) -> str | None:
+    lowered = str(value or "").strip().lower()
+    if lowered == "just now":
+        return "\u521a\u521a"
+    if lowered == "today":
+        return "\u4eca\u5929"
+    if lowered == "yesterday":
+        return "\u6628\u5929"
+    if lowered == "last week":
+        return "\u4e0a\u5468"
+    if lowered == "last month":
+        return "\u4e0a\u4e2a\u6708"
+    if lowered == "last year":
+        return "\u53bb\u5e74"
+
+    match = re.fullmatch(
+        r"(?:about|around|over|nearly|almost)?\s*"
+        r"(?P<count>\d+|a|an|one)\s+"
+        r"(?P<unit>minute|hour|day|week|month|year)s?\s+ago",
+        lowered,
+    )
+    if not match:
+        return None
+
+    count = _relative_count_to_int(match.group("count"))
+    unit = RELATIVE_TIME_UNITS_ZH[match.group("unit")]
+    return f"{count}{unit}\u524d"
+
+
+def localize_relative_time_phrases(text: str) -> str:
+    def replace_match(match: re.Match[str]) -> str:
+        count = _relative_count_to_int(match.group("count"))
+        unit = RELATIVE_TIME_UNITS_ZH[match.group("unit").lower()]
+        return f"{count}{unit}\u524d"
+
+    return re.sub(
+        r"\b(?P<count>\d+|a|an|one)\s+"
+        r"(?P<unit>minute|hour|day|week|month|year)s?\s+ago\b",
+        replace_match,
+        str(text or ""),
+        flags=re.IGNORECASE,
+    )
+
+
+def clean_display_text(text: str) -> str:
+    cleaned = localize_relative_time_phrases(_normalize_text(str(text or "")))
+    return re.sub(
+        r"^((?:\d+)(?:\u5206\u949f|\u5c0f\u65f6|\u5929|\u5468|\u4e2a\u6708|\u5e74)\u524d"
+        r"|\u521a\u521a|\u4eca\u5929|\u6628\u5929|\u4e0a\u5468|\u4e0a\u4e2a\u6708|\u53bb\u5e74)"
+        r"\s*[-\u2013\u2014:：]\s*",
+        lambda match: f"{match.group(1)}\uff0c",
+        cleaned,
+    ).strip()
+
+
 def needs_chinese_rewrite(text: str) -> bool:
     if not text.strip():
         return False
     if contains_chinese(text):
         return False
     return bool(re.search(r"[A-Za-z]{3,}", text))
+
+
+def is_sendable_summary(title: str, summary: str, url: str = "") -> bool:
+    if is_skip_article_response(summary):
+        return False
+    if count_content_chars(summary) < SUMMARY_MIN_CHARS:
+        print(f"摘要过短，跳过: {truncate_text(summary, 60)}")
+        return False
+    if not contains_chinese(summary):
+        print(f"摘要缺少中文内容，跳过: {truncate_text(summary, 60)}")
+        return False
+    if not looks_like_industry_news(title, summary, url):
+        print(f"摘要未命中行业主题，跳过: {truncate_text(summary, 60)}")
+        return False
+    return True
 
 
 def translate_to_chinese(text: str) -> str:
@@ -929,10 +1024,10 @@ def extract_summary_text(content: Any, fallback: str = "") -> str:
         for key in ("summary", "content", "answer", "result"):
             value = content.get(key)
             if value:
-                return str(value).strip()
+                return clean_display_text(str(value).strip())
     if content is None:
-        return fallback.strip()
-    return str(content).strip()
+        return clean_display_text(fallback.strip())
+    return clean_display_text(str(content).strip())
 
 
 def is_skip_article_response(text: str) -> bool:
@@ -959,9 +1054,12 @@ def extract_source(url: str) -> str:
 
 def format_published_date(value: str) -> str:
     parsed = parse_datetime_candidate(value)
-    if not parsed:
-        return "日期待确认"
-    return parsed.astimezone().strftime("%Y-%m-%d")
+    if parsed:
+        return parsed.astimezone().strftime("%Y-%m-%d")
+    localized = localize_relative_time_label(value)
+    if localized:
+        return localized
+    return "日期待确认"
 
 
 def get_topic_emoji(title: str, summary: str) -> str:
@@ -1129,17 +1227,31 @@ def upload_image_to_feishu(image_path: str) -> str | None:
     return None
 
 
+def get_default_banner_path() -> str:
+    image_dir = os.path.join(os.path.dirname(__file__), "images")
+    industry_banner = os.path.join(image_dir, DEFAULT_BANNER_FILENAME)
+    if os.path.exists(industry_banner):
+        return industry_banner
+    return os.path.join(image_dir, LEGACY_BANNER_FILENAME)
+
+
 def send_to_feishu(news_items: list[dict[str, str]]) -> bool:
     """发送卡片消息到飞书。"""
     if not news_items:
         print("没有通过时效校验的新内容，今日不发送日报。")
         return False
 
+    normalized_items = []
+    for item in news_items:
+        normalized_item = dict(item)
+        normalized_item["summary"] = clean_display_text(normalized_item.get("summary", ""))
+        normalized_items.append(normalized_item)
+
     date = datetime.now().strftime("%Y/%m/%d")
 
     encyclopedia_items: list[dict[str, str]] = []
     main_items: list[dict[str, str]] = []
-    for item in news_items:
+    for item in normalized_items:
         if is_encyclopedia_article(item["title"], item["summary"], item["url"]):
             encyclopedia_items.append(item)
         else:
@@ -1170,24 +1282,13 @@ def send_to_feishu(news_items: list[dict[str, str]]) -> bool:
                 image_key = upload_image_to_feishu(infographic_path)
             else:
                 print("信息图生成失败，使用默认首图")
-                banner_path = os.path.join(
-                    os.path.dirname(__file__),
-                    "images",
-                    "ai_banner.png",
-                )
-                image_key = upload_image_to_feishu(banner_path)
+                image_key = upload_image_to_feishu(get_default_banner_path())
         except Exception as exc:
             print(f"生成信息图时出错: {exc}，使用默认首图")
-            banner_path = os.path.join(
-                os.path.dirname(__file__),
-                "images",
-                "ai_banner.png",
-            )
-            image_key = upload_image_to_feishu(banner_path)
+            image_key = upload_image_to_feishu(get_default_banner_path())
     else:
         print("信息图生成已禁用，使用默认首图")
-        banner_path = os.path.join(os.path.dirname(__file__), "images", "ai_banner.png")
-        image_key = upload_image_to_feishu(banner_path)
+        image_key = upload_image_to_feishu(get_default_banner_path())
 
     elements: list[dict[str, Any]] = []
     if image_key:
@@ -1336,6 +1437,7 @@ def main() -> bool:
             f"{title} ({format_published_date(result['published_at'])})"
         )
 
+        used_summary_fallback = False
         try:
             content = scrape_article_content(
                 result["url"],
@@ -1348,18 +1450,17 @@ def main() -> bool:
                 continue
         except Exception as exc:
             print(f"抓取失败: {exc}，使用翻译备用方案")
+            used_summary_fallback = True
             summary = translate_to_chinese(result["snippet"][:300])
 
-        summary = ensure_summary_chinese(summary.strip(), title)
-        title_cn = rewrite_title_to_chinese(title, summary)
-        summary = truncate_text(summary.strip(), 200)
-        if not summary:
-            print("摘要为空，跳过")
-            continue
-        if is_skip_article_response(summary):
-            print("备用摘要仍判定为非单篇近期新闻，跳过")
+        if not used_summary_fallback:
+            summary = ensure_summary_chinese(summary.strip(), title)
+        summary = truncate_text(clean_display_text(summary.strip()), 200)
+        if not is_sendable_summary(title, summary, result["url"]):
+            print("摘要质量不足，跳过")
             continue
 
+        title_cn = rewrite_title_to_chinese(title, summary)
         news_items.append(
             {
                 "title": title_cn,

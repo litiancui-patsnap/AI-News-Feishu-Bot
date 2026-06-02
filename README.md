@@ -59,10 +59,14 @@ OPENAI_BASE_URL=http://192.168.106.73:4000/v1
 OPENAI_API_KEY=sk-***
 OPENAI_GENERAL_MODEL=gpt-5.4
 OPENAI_CODING_MODEL=gpt-5.4-codex
+OPENAI_FALLBACK_MODEL=gpt-5.4-codex
+LLM_RETRY_ATTEMPTS=2
+LLM_RETRY_DELAY_SECONDS=3
 SEARCH_QUERY=绿化养护 | 园林绿化 | 城市绿化 | 市政养护 绿化 | 养护标准 绿化 | 绿化招标 | 智慧园林 | 智能灌溉 | 园林机械 | 3DGS Gaussian Splatting | 3D Gaussian Splatting 空间 | GIS 空间 | 空间大模型 | 数字孪生 三维重建
 SEARCH_REGION=cn-zh
 SEARCH_TIME_LIMIT=w
 NEWS_MAX_AGE_HOURS=48
+SUMMARY_MIN_CHARS=30
 ```
 
 如果要切回本地 Ollama：
@@ -111,4 +115,5 @@ setup_task.ps1
 - `gpt-5.4-codex` 已保留为可配置入口，便于后续接入更偏结构化或代码型任务
 - `OLLAMA_*` 配置未删除，仍可作为本地模型备用路径
 - 信息图优先使用本地 `Pillow` 模板生成
+- 默认首图优先使用 `images/industry_banner.png`
 - `INFOGRAPHIC_API_FALLBACK` 默认关闭，模板失败时会直接回退到默认首图，不再调用外部图片模型

@@ -53,7 +53,7 @@ INFOGRAPHIC_OUTPUT_DIR=./images/generated
 
 1. 在 `.env` 中设置 `ENABLE_INFOGRAPHIC=false`
 2. 运行 `python ai_news_bot.py`
-3. 系统将使用 `images/ai_banner.png` 作为首图
+3. 系统将使用 `images/industry_banner.png` 作为首图
 
 ## 🧪 测试
 
@@ -88,7 +88,7 @@ python ai_news_bot.py
 
 [失败降级]
     ↓
-使用默认首图 (ai_banner.png)
+使用默认首图 (industry_banner.png)
     ↓
 上传到飞书
     ↓

@@ -91,7 +91,7 @@ ENABLE_INFOGRAPHIC=false
 # 2. 运行机器人
 python ai_news_bot.py
 
-# 结果：使用 images/ai_banner.png 作为首图
+# 结果：使用 images/industry_banner.png 作为首图
 ```
 
 ### 场景 2：启用信息图生成（API 可用时）
@@ -192,7 +192,7 @@ config.py                          # 添加配置项
 - 查看错误日志
 
 **问题 2：降级策略未生效**
-- 确认 `images/ai_banner.png` 存在
+- 确认 `images/industry_banner.png` 存在
 - 检查文件权限
 
 **问题 3：配置不生效**

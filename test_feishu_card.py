@@ -60,7 +60,7 @@ def test_card_with_image():
             "elements": [
                 {
                     "tag": "img",
-                    "img_key": "https://raw.githubusercontent.com/litiancui-patsnap/AI-News-Feishu-Bot/main/images/ai_banner.png",
+                    "img_key": "https://raw.githubusercontent.com/litiancui-patsnap/AI-News-Feishu-Bot/main/images/industry_banner.png",
                     "alt": {
                         "tag": "plain_text",
                         "content": "绿化养护行业日报"

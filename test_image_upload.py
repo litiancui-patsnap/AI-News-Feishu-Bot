@@ -33,7 +33,7 @@ def test_upload_image():
     print("测试2: 上传图片到飞书")
     print("=" * 60)
 
-    image_path = os.path.join(os.path.dirname(__file__), "images", "ai_banner.png")
+    image_path = os.path.join(os.path.dirname(__file__), "images", "industry_banner.png")
     print(f"图片路径: {image_path}")
     print(f"文件存在: {os.path.exists(image_path)}")
 
