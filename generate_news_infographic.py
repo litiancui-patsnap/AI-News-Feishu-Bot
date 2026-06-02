@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-AI 新闻信息图生成器
+绿化养护行业信息图生成器
 
 功能：
 - 优先使用模板系统（Pillow）生成信息图
@@ -81,20 +81,22 @@ def build_infographic_prompt(news_item):
     Returns:
         str: 适合生成信息图的 prompt
     """
-    category = news_item.get('category', '🧠 模型/技术')
+    category = news_item.get('category', '🏞️ 行业动态')
     title = news_item.get('title', '')
     summary = news_item.get('summary', '')
 
     # 根据分类选择视觉风格
     style_map = {
-        '🖥️ 芯片/硬件': '科技蓝色主色调，电路板纹理背景，硬件图标元素',
-        '📜 政策/伦理': '专业灰蓝色，文档和法律图标，严肃专业风格',
-        '🏭 产业/公司': '商务蓝绿色渐变，图表和数据可视化元素',
-        '🧠 模型/技术': '渐变紫蓝色，神经网络和AI图案，未来科技感',
-        '📊 周报/深度': '深蓝色，信息图表风格，数据可视化'
+        '🏞️ 行业动态': '清新绿色主色调，城市绿地和园林轮廓元素',
+        '🌿 绿化养护': '植物绿色主色调，草坪、树木、修剪和植保元素',
+        '🚿 设备/灌溉': '蓝绿色主色调，灌溉、传感器和园林设备元素',
+        '📜 政策/标准': '专业灰绿色，文件、规范和城市管理元素',
+        '🏗️ 项目/招采': '商务蓝绿色，项目节点、地图和数据图表元素',
+        '🧠 智慧园林': '科技蓝绿色，传感器、AI和智慧园林管理界面元素',
+        '🧭 3DJS/空间大模型': '科技蓝绿色，三维地图、网格、点云和空间模型元素'
     }
 
-    style = style_map.get(category, '现代科技蓝紫渐变，扁平化设计')
+    style = style_map.get(category, '现代绿色行业信息图，扁平化设计')
 
     # 提取关键信息（尝试找出数字、百分比等）
     import re
@@ -108,9 +110,9 @@ def build_infographic_prompt(news_item):
     summary_sentences = summary.split('。')[:3]
     summary_short = '。'.join(summary_sentences) + '。' if summary_sentences else summary
 
-    prompt = f"""一张中文AI资讯信息图（infographic），主题为：「{title_short}」
+    prompt = f"""一张中文绿化养护行业信息图（infographic），主题为：「{title_short}」
 
-整体风格：清晰、现代、专业、{style}、扁平插画风格、蓝色+浅灰色为主色，点缀橙色强调重点、横向构图（16:9），适合社交媒体分享。
+整体风格：清晰、现代、专业、{style}、扁平插画风格、绿色+蓝色+浅灰色为主色，点缀橙色强调重点、横向构图（16:9），适合企业内部日报分享。
 
 画面结构从左到右分区：
 - 左侧标题区：
@@ -124,14 +126,14 @@ def build_infographic_prompt(news_item):
   * 用图标或数字标注要点
 
 - 右侧标识区：
-  * 来源："AI资讯日报"
-  * 简洁的AI图标或logo
+  * 来源："绿化养护行业日报"
+  * 简洁的园林、地图或空间技术图标
 
-配色方案：主色调蓝色系，强调色橙色，背景白色或浅灰。
-文字要求：中文为主，技术术语保留英文，字体清晰易读。
+配色方案：主色调绿色和蓝色，强调色橙色，背景白色或浅灰。
+文字要求：中文为主，3DJS、Three.js、GIS、BIM、空间大模型等技术术语可保留英文，字体清晰易读。
 视觉元素：扁平化图标、简洁几何图形、适当留白。
 
-整体感觉：专业但不严肃，信息密度适中，一眼能抓住核心要点，适合快速阅读和分享。"""
+整体感觉：专业、清爽、面向绿化养护业务，一眼能抓住核心要点，适合快速阅读和分享。"""
 
     return prompt
 
@@ -230,13 +232,13 @@ def generate_infographic_api(news_item, output_dir):
 def test_generate():
     """测试函数"""
     test_news = {
-        'title': 'OpenAI 发布 GPT-5，性能提升 10 倍',
-        'summary': 'OpenAI 今日正式发布 GPT-5 模型，相比 GPT-4 性能提升 10 倍，推理速度提高 50%，成本降低 30%。新模型在数学、编程和多模态理解方面表现出色。',
-        'category': '🧠 模型/技术'
+        'title': '某市启动公园绿地智慧养护试点',
+        'summary': '某市园林部门启动智慧养护试点，结合传感器、智能灌溉和三维场景管理提升绿地巡检效率。',
+        'category': '🧠 智慧园林'
     }
 
     print("=" * 60)
-    print("测试：生成 AI 新闻信息图")
+    print("测试：生成绿化养护行业信息图")
     print("=" * 60)
 
     image_path = generate_infographic_for_news(test_news)

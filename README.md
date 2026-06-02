@@ -1,6 +1,6 @@
-# AI-News-Feishu-Bot
+# 绿化养护行业日报机器人
 
-自动抓取 AI 新闻，提炼中文摘要，并推送到飞书群。
+自动抓取绿化养护、智慧园林、3DJS 和空间大模型相关行业动态，提炼中文摘要，并推送到飞书群。
 
 ## 当前模型接入
 
@@ -13,7 +13,7 @@
 
 ## 功能
 
-- 使用 DuckDuckGo 搜索最新 AI 新闻
+- 使用 DuckDuckGo 搜索最新绿化养护、智慧园林、3DJS 和空间大模型相关资讯
 - 对搜索结果做严格发布时间校验，过旧或无日期内容直接丢弃
 - 使用 ScrapeGraphAI 提取文章正文并生成中文摘要
 - 使用统一 LLM 调用层生成翻译和今日洞察
@@ -59,7 +59,9 @@ OPENAI_BASE_URL=http://192.168.106.73:4000/v1
 OPENAI_API_KEY=sk-***
 OPENAI_GENERAL_MODEL=gpt-5.4
 OPENAI_CODING_MODEL=gpt-5.4-codex
-SEARCH_TIME_LIMIT=d
+SEARCH_QUERY=绿化养护 | 园林绿化 | 城市绿化 | 市政养护 绿化 | 养护标准 绿化 | 绿化招标 | 智慧园林 | 智能灌溉 | 园林机械 | 3DJS WebGL 空间 | Three.js GIS 空间 | 空间大模型 | 数字孪生 三维重建
+SEARCH_REGION=cn-zh
+SEARCH_TIME_LIMIT=w
 NEWS_MAX_AGE_HOURS=48
 ```
 

@@ -88,29 +88,62 @@ JSON_LD_DATE_KEYS = (
     "date",
 )
 ARTICLE_BODY_JSON_KEYS = ("articleBody", "text", "description")
-AI_SIGNAL_PATTERNS = (
-    " ai ",
-    "artificial intelligence",
-    "model",
-    "llm",
-    "gpt",
-    "gemini",
-    "claude",
-    "llama",
-    "chatgpt",
-    "copilot",
-    "agent",
-    "inference",
-    "multimodal",
-    "superintelligence",
-    "chip",
-    "gpu",
-    "tpu",
-    "semiconductor",
-    "openai",
-    "anthropic",
-    "deepmind",
-    "muse spark",
+INDUSTRY_SIGNAL_PATTERNS = (
+    "绿化养护",
+    "园林绿化",
+    "城市绿化",
+    "市政绿化",
+    "市政养护",
+    "绿化工程",
+    "园林工程",
+    "园林养护",
+    "养护标准",
+    "养护管理",
+    "草坪",
+    "苗木",
+    "乔木",
+    "灌木",
+    "修剪",
+    "灌溉",
+    "浇灌",
+    "施肥",
+    "病虫害",
+    "病虫害防治",
+    "植保",
+    "园林机械",
+    "智慧园林",
+    "数字园林",
+    "智能灌溉",
+    "绿化招标",
+    "绿化中标",
+    "园林招标",
+    "园林中标",
+    "景观养护",
+    "公园绿地",
+    "物业绿化",
+    "住建",
+    "城管",
+    "3djs",
+    "three.js",
+    "webgl",
+    "gis",
+    "bim",
+    "cesium",
+    "数字孪生",
+    "三维重建",
+    "空间大模型",
+    "空间智能",
+    "空间计算",
+    "spatial ai",
+    "spatial model",
+    "spatial intelligence",
+    "digital twin",
+    "3d gaussian",
+    "3dgs",
+    "gaussian splatting",
+    "nerf",
+    "point cloud",
+    "lidar",
 )
 MARKET_NOISE_PATTERNS = (
     "stock jumped",
@@ -167,15 +200,15 @@ EVENT_STOPWORDS = {
     "said",
 }
 COMPANY_ALIASES = {
+    "esri": ("esri", "arcgis"),
+    "cesium": ("cesium", "cesiumjs"),
+    "autodesk": ("autodesk", "bim"),
+    "trimble": ("trimble",),
+    "dji": ("dji", "大疆"),
     "openai": ("openai", "chatgpt", "gpt"),
     "google": ("google", "gemini", "deepmind", "alphabet"),
-    "meta": ("meta", "facebook", "instagram", "whatsapp"),
-    "anthropic": ("anthropic", "claude"),
-    "microsoft": ("microsoft", "copilot"),
-    "amazon": ("amazon", "aws"),
+    "meta": ("meta", "facebook"),
     "nvidia": ("nvidia",),
-    "apple": ("apple", "siri"),
-    "xai": ("xai", "grok"),
 }
 MAX_ITEMS_PER_COMPANY = 2
 
@@ -198,6 +231,9 @@ def _dedupe_tokens(text: str) -> str:
     ordered_tokens: list[str] = []
     for token in text.split():
         token_key = token.lower()
+        if token_key in {"or", "and"}:
+            ordered_tokens.append(token)
+            continue
         if token_key in seen:
             continue
         seen.add(token_key)
@@ -232,23 +268,32 @@ def extract_event_tokens(*parts: str) -> set[str]:
     }
 
 
-def looks_like_ai_news(title: str, summary: str, url: str) -> bool:
+def looks_like_industry_news(title: str, summary: str, url: str) -> bool:
     text = f" {title.lower()} {summary.lower()} {url.lower()} "
     if any(pattern in text for pattern in MARKET_NOISE_PATTERNS) and not any(
-        pattern in text for pattern in AI_SIGNAL_PATTERNS
+        pattern in text for pattern in INDUSTRY_SIGNAL_PATTERNS
     ):
         return False
-    return any(pattern in text for pattern in AI_SIGNAL_PATTERNS)
+    return any(pattern in text for pattern in INDUSTRY_SIGNAL_PATTERNS)
+
+
+def looks_like_ai_news(title: str, summary: str, url: str) -> bool:
+    """Backward-compatible alias for older tests and scripts."""
+    return looks_like_industry_news(title, summary, url)
 
 
 def is_low_quality_title(title: str) -> bool:
     normalized = clean_title(title)
+    if contains_chinese(normalized):
+        return len(re.sub(r"\s+", "", normalized)) <= 4
+    if looks_like_industry_news(normalized, "", ""):
+        return False
     tokens = re.findall(r"[a-zA-Z0-9]+", normalized.lower())
     if not tokens:
         return True
     if len(tokens) <= 2:
         return True
-    if len(tokens) <= 4 and not extract_company_tags(normalized) and "ai" not in normalized.lower():
+    if len(tokens) <= 4 and not extract_company_tags(normalized):
         return True
     return False
 
@@ -302,11 +347,19 @@ def exceeds_company_limit(
     return any(count >= MAX_ITEMS_PER_COMPANY for count in company_counts.values())
 
 
+def split_search_queries(query: str) -> list[str]:
+    queries = [part.strip() for part in re.split(r"\s*[|;；]\s*", query) if part.strip()]
+    return queries or [query.strip()]
+
+
 def build_search_query(base_query: str, now: datetime | None = None) -> str:
     """Normalize the search query so it always targets the current month and year."""
     now = now or datetime.now()
-    cleaned = re.sub(r"\b20\d{2}\b", " ", base_query)
+    cleaned = re.sub(r"20\d{2}年\d{1,2}月", " ", base_query)
+    cleaned = re.sub(r"\b20\d{2}\b", " ", cleaned)
     cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    if contains_chinese(cleaned) or re.search(r"\bOR\b", cleaned, flags=re.IGNORECASE):
+        return _dedupe_tokens(cleaned)
     suffix = f"{now.strftime('%B')} {now.year}"
     return _dedupe_tokens(f"{cleaned} {suffix}".strip())
 
@@ -554,7 +607,7 @@ def validate_news_result(
     if is_low_quality_title(title):
         print(f"跳过低质量标题结果: {title}")
         return None
-    if not looks_like_ai_news(title, summary, url):
+    if not looks_like_industry_news(title, summary, url):
         print(f"跳过低相关度结果: {title}")
         return None
     if is_evergreen_result(title, summary, url):
@@ -585,21 +638,49 @@ def validate_news_result(
     }
 
 
-def search_ai_news(query: str = SEARCH_QUERY, max_results: int = 5) -> list[dict[str, str]]:
-    """Use DDGS news search and strict freshness validation to collect recent AI news."""
-    resolved_query = build_search_query(query)
-    print(f"搜索查询: {resolved_query}")
+def collect_raw_search_results(
+    ddgs: DDGS,
+    query: str,
+    *,
+    max_results: int,
+) -> list[dict[str, Any]]:
+    raw_results: list[dict[str, Any]] = []
+    per_source_limit = max(2, min(5, max_results))
+
+    search_sources = (
+        ("新闻", ddgs.news),
+        ("网页", ddgs.text),
+    )
+    for source_name, search_fn in search_sources:
+        try:
+            raw_results.extend(
+                search_fn(
+                    query,
+                    region=SEARCH_REGION,
+                    timelimit=SEARCH_TIME_LIMIT,
+                    max_results=per_source_limit,
+                )
+            )
+        except Exception as exc:
+            print(f"{source_name}搜索出错: {exc}")
+
+    return raw_results
+
+
+def search_industry_news(query: str = SEARCH_QUERY, max_results: int = 5) -> list[dict[str, str]]:
+    """Use DDGS news search and strict freshness validation to collect industry news."""
+    resolved_queries = [build_search_query(part) for part in split_search_queries(query)]
 
     results: list[dict[str, str]] = []
     seen_urls: set[str] = set()
 
-    try:
-        ddgs = DDGS()
-        raw_results = ddgs.news(
+    ddgs = DDGS()
+    for resolved_query in resolved_queries:
+        print(f"搜索查询: {resolved_query}")
+        raw_results = collect_raw_search_results(
+            ddgs,
             resolved_query,
-            region=SEARCH_REGION,
-            timelimit=SEARCH_TIME_LIMIT,
-            max_results=max_results * 10,
+            max_results=max_results,
         )
         for raw_result in raw_results:
             candidate = validate_news_result(raw_result)
@@ -618,14 +699,15 @@ def search_ai_news(query: str = SEARCH_QUERY, max_results: int = 5) -> list[dict
 
             seen_urls.add(url)
             results.append(candidate)
-            if len(results) >= max_results:
-                break
             time.sleep(0.2)
-    except Exception as exc:
-        print(f"搜索出错: {exc}")
 
     results.sort(key=lambda item: item["published_at"], reverse=True)
-    return results
+    return results[:max_results]
+
+
+def search_ai_news(query: str = SEARCH_QUERY, max_results: int = 5) -> list[dict[str, str]]:
+    """Backward-compatible alias for older scripts."""
+    return search_industry_news(query, max_results=max_results)
 
 
 def truncate_text(text: str, max_len: int) -> str:
@@ -641,6 +723,18 @@ def truncate_text(text: str, max_len: int) -> str:
     return truncated + "..."
 
 
+def contains_chinese(text: str) -> bool:
+    return bool(re.search(r"[\u4e00-\u9fff]", text or ""))
+
+
+def needs_chinese_rewrite(text: str) -> bool:
+    if not text.strip():
+        return False
+    if contains_chinese(text):
+        return False
+    return bool(re.search(r"[A-Za-z]{3,}", text))
+
+
 def translate_to_chinese(text: str) -> str:
     """Translate or summarize English snippets into concise Chinese."""
     if not text.strip():
@@ -649,21 +743,61 @@ def translate_to_chinese(text: str) -> str:
     try:
         return call_llm(
             (
-                "请把下面这段 AI 新闻片段整理成中文摘要。\n"
+                "请把下面这段行业新闻片段整理成中文摘要。\n"
                 "要求：\n"
                 "1. 只根据输入内容改写，不补充未出现的日期、数字或事实\n"
-                "2. 优先保留公司名、产品名、明确日期与关键动作\n"
+                "2. 优先保留公司名、机构名、项目名、产品名、模型名、明确日期与关键动作\n"
                 "3. 输出 2 句话以内，总字数不超过 120 字\n"
+                "4. 必须使用简体中文；公司名、产品名、模型名和技术缩写可保留英文\n"
                 f"新闻片段：\n{text}"
             ),
             system_prompt=(
-                "你是一名科技新闻编辑，只做客观压缩，不脑补背景，不延展评论。"
+                "你是一名绿化养护与空间技术方向的中文行业编辑，只输出简体中文摘要，不脑补背景，不延展评论。"
             ),
             task="translation",
         )
     except Exception as exc:
         print(f"翻译失败: {exc}")
         return text
+
+
+def rewrite_title_to_chinese(title: str, summary: str = "") -> str:
+    """Rewrite an English news title into concise Simplified Chinese."""
+    cleaned_title = clean_title(title)
+    if not needs_chinese_rewrite(cleaned_title):
+        return cleaned_title
+
+    try:
+        rewritten = call_llm(
+            (
+                "请把下面的行业新闻标题改写成简体中文标题。\n"
+                "要求：\n"
+                "1. 只根据输入信息改写，不添加未出现的事实\n"
+                "2. 保留公司名、机构名、项目名、产品名、模型名、金额、日期等关键信息\n"
+                "3. 标题要像中文行业媒体标题，简洁具体\n"
+                "4. 28 字以内；不要句号；不要解释\n\n"
+                f"原标题：{cleaned_title}\n"
+                f"参考摘要：{summary[:300]}"
+            ),
+            system_prompt=(
+                "你是一名绿化养护与空间技术方向的中文标题编辑，只输出一个简体中文标题。"
+            ),
+            task="translation",
+        ).strip()
+        rewritten = rewritten.strip('"“”')
+        return truncate_text(rewritten, 45) if contains_chinese(rewritten) else cleaned_title
+    except Exception as exc:
+        print(f"标题中文化失败: {exc}")
+        return cleaned_title
+
+
+def ensure_summary_chinese(summary: str, title: str = "") -> str:
+    if not needs_chinese_rewrite(summary):
+        return summary
+
+    source_text = f"标题：{title}\n摘要：{summary}"
+    translated = translate_to_chinese(source_text)
+    return translated if contains_chinese(translated) else summary
 
 
 def _extract_json_ld_texts(payload: Any) -> list[str]:
@@ -763,7 +897,7 @@ def scrape_article_content(
         datetime.now(timezone.utc) - timedelta(hours=NEWS_MAX_AGE_HOURS)
     ).strftime("%Y-%m-%d")
     return call_llm(
-        f"""你正在为今天的 AI 日报提取新闻摘要。以下页面已经通过发布时间校验：
+        f"""你正在为今天的绿化养护行业日报提取新闻摘要。以下页面已经通过发布时间校验：
 
 页面链接：{url}
 发布时间：{published_label}
@@ -772,19 +906,22 @@ def scrape_article_content(
 如果正文属于以下任一情况，请只返回 {SKIP_ARTICLE}：
 1. 时间线、Tracker、汇总、周报、百科、教程、产品文档或历史回顾
 2. 页面主体不是单篇新闻，而是列表页、专题页、资料页
-3. 正文找不到明确的新闻事件，或者主要在回顾 {cutoff_date} 之前的旧事件
+3. 正文找不到明确的新闻事件、行业动态、政策项目或技术发布
+4. 正文主要在回顾 {cutoff_date} 之前的旧事件
 
-如果页面符合要求，请输出中文摘要，并严格遵守：
+如果页面符合要求，请输出简体中文摘要，并严格遵守：
 1. 首句必须写清楚谁在什么日期做了什么
-2. 保留文章中的明确日期、关键数字、公司名、产品名
+2. 保留文章中的明确日期、关键数字、公司名、机构名、项目名、产品名、模型名
 3. 不要使用“最近”“近期”“日前”等模糊时间词
 4. 不要写背景铺垫、评论性空话、行业常识
 5. 2-3 句话，总字数不超过 150 字
-6. 只输出摘要正文或 {SKIP_ARTICLE}，不要额外解释
+6. 必须使用简体中文；公司名、产品名、模型名、英文缩写可保留英文
+7. 优先说明这条新闻对绿化养护、智慧园林、3DJS 或空间大模型的关系
+8. 只输出摘要正文或 {SKIP_ARTICLE}，不要额外解释
 
 正文内容：
 {article_text}""",
-        system_prompt="你是一名科技新闻编辑，只根据给定正文提炼高密度中文摘要。",
+        system_prompt="你是一名绿化养护与空间技术方向的中文行业编辑，只根据给定正文提炼高密度简体中文摘要。",
         task="general",
     )
 
@@ -835,32 +972,58 @@ def get_topic_emoji(title: str, summary: str) -> str:
 
     if any(
         word in text
-        for word in ["chip", "gpu", "nvidia", "amd", "芯片", "硬件", "hardware"]
+        for word in [
+            "3djs",
+            "three.js",
+            "webgl",
+            "cesium",
+            "gis",
+            "bim",
+            "数字孪生",
+            "三维重建",
+            "空间大模型",
+            "空间智能",
+            "spatial",
+            "gaussian splatting",
+            "3dgs",
+            "nerf",
+            "point cloud",
+            "lidar",
+        ]
     ):
-        return "🖥️ 芯片/硬件"
+        return "🧭 3DJS/空间大模型"
     if any(
         word in text
-        for word in ["regulation", "policy", "law", "监管", "法规", "政策", "伦理"]
+        for word in ["regulation", "policy", "law", "监管", "法规", "政策", "标准", "住建", "城管"]
     ):
-        return "📜 政策/伦理"
+        return "📜 政策/标准"
     if any(
         word in text
         for word in [
-            "funding",
-            "investment",
-            "acquisition",
-            "company",
-            "融资",
-            "投资",
-            "收购",
-            "公司",
-            "产业",
+            "招标",
+            "中标",
+            "采购",
+            "项目",
+            "工程",
+            "合同",
+            "tender",
+            "bid",
         ]
     ):
-        return "🏭 产业/公司"
-    if any(word in text for word in ["weekly", "brief", "roundup", "周报", "深度"]):
-        return "📊 周报/深度"
-    return "🧠 模型/技术"
+        return "🏗️ 项目/招采"
+    if any(
+        word in text
+        for word in ["病虫害", "虫害", "植保", "施肥", "草坪", "苗木", "乔木", "灌木", "修剪", "养护"]
+    ):
+        return "🌿 绿化养护"
+    if any(
+        word in text
+        for word in ["灌溉", "浇灌", "喷灌", "智能灌溉", "园林机械", "设备", "传感器", "无人机", "大疆"]
+    ):
+        return "🚿 设备/灌溉"
+    if any(word in text for word in ["ai", "大模型", "智慧园林", "数字园林", "智能"]):
+        return "🧠 智慧园林"
+    return "🏞️ 行业动态"
 
 
 def is_encyclopedia_article(title: str, summary: str, url: str) -> bool:
@@ -890,24 +1053,24 @@ def generate_daily_insight(news_items: list[dict[str, str]]) -> str:
         )
 
         insight = call_llm(
-            f"""今天是{today}。以下资讯都已经通过发布时间校验，请基于它们生成一句日报洞察：
+            f"""今天是{today}。以下资讯都已经通过发布时间校验，请基于它们生成一句行业日报洞察：
 
 {news_details}
 
 要求：
-1. 必须点名具体公司、技术或事件，不要泛泛而谈
-2. 必须体现今天这批新闻最特殊的共同信号
+1. 必须点名具体公司、机构、城市、项目、技术或事件，不要泛泛而谈
+2. 必须体现今天这批新闻对绿化养护、智慧园林、3DJS 或空间大模型最特殊的共同信号
 3. 20-35 字，简洁有力
 4. 避免使用“持续”“不断”“进一步”等模糊词
 5. 只输出一句话，不要解释""",
-            system_prompt="你是一名中文科技编辑，只写一句信息密度高的日报判断。",
+            system_prompt="你是一名绿化养护与空间技术方向的中文行业编辑，只写一句信息密度高的日报判断。",
             task="insight",
         ).strip()
         insight = insight.replace('"', "").replace("“", "").replace("”", "").strip("。！？")
         return truncate_text(insight, 50)
     except Exception as exc:
         print(f"生成今日洞察失败: {exc}")
-        return "近两日 AI 新闻集中在模型发布、产品落地和基础设施竞争。"
+        return "近两日行业动态集中在养护管理、智慧园林和空间技术应用。"
 
 
 def get_tenant_access_token() -> str | None:
@@ -1036,7 +1199,7 @@ def send_to_feishu(news_items: list[dict[str, str]]) -> bool:
             {
                 "tag": "img",
                 "img_key": image_key,
-                "alt": {"tag": "plain_text", "content": "AI资讯日报"},
+                "alt": {"tag": "plain_text", "content": "绿化养护行业日报"},
                 "mode": "compact_horizontal",
                 "preview": True,
             }
@@ -1048,8 +1211,8 @@ def send_to_feishu(news_items: list[dict[str, str]]) -> bool:
             "text": {
                 "tag": "plain_text",
                 "content": (
-                    f"今日精选 {len(main_items)} 条过去 {NEWS_MAX_AGE_HOURS} 小时内的 AI 资讯\n"
-                    f"🧠 今日AI要点：{daily_insight}"
+                    f"今日精选 {len(main_items)} 条过去 {NEWS_MAX_AGE_HOURS} 小时内的行业资讯\n"
+                    f"🌿 今日行业要点：{daily_insight}"
                 ),
             },
         }
@@ -1121,7 +1284,7 @@ def send_to_feishu(news_items: list[dict[str, str]]) -> bool:
             "header": {
                 "title": {
                     "tag": "lark_md",
-                    "content": f"AI资讯日报 | <font color='orange'>{date}</font>",
+                    "content": f"绿化养护行业日报 | <font color='orange'>{date}</font>",
                 },
                 "template": "blue",
                 "ud_icon": {
@@ -1149,8 +1312,8 @@ def send_to_feishu(news_items: list[dict[str, str]]) -> bool:
 def main() -> bool:
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
-    print("搜索最新 AI 资讯...")
-    search_results = search_ai_news(SEARCH_QUERY, max_results=MAX_NEWS_ITEMS)
+    print("搜索最新绿化养护、智慧园林与空间技术资讯...")
+    search_results = search_industry_news(SEARCH_QUERY, max_results=MAX_NEWS_ITEMS)
     if not search_results:
         print("未找到通过发布时间校验的新内容，今日不发送日报。")
         return False
@@ -1191,6 +1354,8 @@ def main() -> bool:
             print(f"抓取失败: {exc}，使用翻译备用方案")
             summary = translate_to_chinese(result["snippet"][:300])
 
+        summary = ensure_summary_chinese(summary.strip(), title)
+        title_cn = rewrite_title_to_chinese(title, summary)
         summary = truncate_text(summary.strip(), 200)
         if not summary:
             print("摘要为空，跳过")
@@ -1201,7 +1366,8 @@ def main() -> bool:
 
         news_items.append(
             {
-                "title": title,
+                "title": title_cn,
+                "original_title": title,
                 "url": result["url"],
                 "summary": summary,
                 "snippet": result.get("snippet", ""),

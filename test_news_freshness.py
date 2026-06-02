@@ -6,11 +6,18 @@ import ai_news_bot as bot
 def test_build_search_query_replaces_stale_year():
     now = datetime(2026, 4, 9, tzinfo=timezone.utc)
 
-    query = bot.build_search_query("OpenAI launch release 2024", now=now)
+    query = bot.build_search_query("绿化养护 城市绿化 2024", now=now)
 
     assert "2024" not in query
-    assert "2026" in query
-    assert "April" in query
+    assert "绿化养护" in query
+    assert "城市绿化" in query
+
+
+def test_split_search_queries_supports_topic_groups():
+    assert bot.split_search_queries("绿化养护 | 3DJS 空间大模型") == [
+        "绿化养护",
+        "3DJS 空间大模型",
+    ]
 
 
 def test_extract_publication_date_from_html_meta():
@@ -40,11 +47,19 @@ def test_is_fresh_publication_rejects_stale_articles():
     )
 
 
-def test_looks_like_ai_news_filters_stock_noise():
-    assert not bot.looks_like_ai_news(
+def test_looks_like_industry_news_filters_stock_noise():
+    assert not bot.looks_like_industry_news(
         "Why Meta Platforms Stock Jumped Today",
         "Tech stocks were surging broadly on geopolitics and market optimism.",
         "https://example.com/markets/stocks/articles/meta-jumped",
+    )
+
+
+def test_looks_like_industry_news_accepts_green_maintenance():
+    assert bot.looks_like_industry_news(
+        "某市发布城市绿化养护标准",
+        "新标准覆盖修剪、灌溉和病虫害防治要求。",
+        "https://example.com/news/landscape-maintenance",
     )
 
 

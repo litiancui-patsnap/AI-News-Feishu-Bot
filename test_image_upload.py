@@ -64,7 +64,7 @@ def test_send_card_with_image(image_key):
         "card": {
             "header": {
                 "title": {
-                    "content": "🤖 测试 - 带首图的AI资讯日报",
+                    "content": "🤖 测试 - 带首图的绿化养护行业日报",
                     "tag": "plain_text"
                 },
                 "template": "blue"
@@ -75,7 +75,7 @@ def test_send_card_with_image(image_key):
                     "img_key": image_key,
                     "alt": {
                         "tag": "plain_text",
-                        "content": "AI资讯日报"
+                        "content": "绿化养护行业日报"
                     },
                     "mode": "compact_horizontal",  # 使用紧凑模式，高度最小
                     "preview": True

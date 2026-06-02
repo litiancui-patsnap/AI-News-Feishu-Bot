@@ -4,29 +4,29 @@ from config import MAX_NEWS_ITEMS
 # 使用真实来源的测试数据
 test_data = [
     {
-        "title": "OpenAI 发布 GPT-5 模型，性能提升显著",
-        "summary": "OpenAI 今日正式发布了 GPT-5 模型，在推理能力、多模态理解和代码生成方面都有显著提升。新模型采用了全新的训练架构，参数规模达到万亿级别。",
-        "url": "https://techcrunch.com/2026/01/19/openai-gpt5-release"
+        "title": "某市发布城市绿化养护精细化管理标准",
+        "summary": "某市园林部门发布新的城市绿化养护标准，覆盖乔灌木修剪、草坪管护、灌溉和病虫害防治等关键环节。",
+        "url": "https://example.com/landscape-maintenance-standard",
     },
     {
-        "title": "谷歌推出 Gemini 2.0，挑战 GPT-5 地位",
-        "summary": "谷歌发布 Gemini 2.0 模型，声称在多项基准测试中超越 GPT-5。该模型特别强化了多语言支持和实时信息检索能力，并集成到 Google 全系产品中。",
-        "url": "https://www.theverge.com/2026/01/19/google-gemini-2"
+        "title": "智慧园林平台接入智能灌溉和巡检数据",
+        "summary": "一家智慧园林服务商升级管养平台，接入土壤湿度、气象和巡检数据，用于优化绿地浇灌和养护排班。",
+        "url": "https://example.com/smart-landscape-platform",
     },
     {
-        "title": "AI 监管新规出台，要求模型透明度",
-        "summary": "欧盟通过新的 AI 监管法案，要求所有大型语言模型必须公开训练数据来源和模型决策过程。该法案将于 2026 年 6 月正式生效，影响全球 AI 产业。",
-        "url": "https://www.reuters.com/technology/ai-regulation-eu"
+        "title": "Three.js 三维地图用于园区绿化资产管理",
+        "summary": "某园区管理项目使用 Three.js 和 GIS 数据构建三维绿化资产台账，支持树木定位、养护记录和巡检问题追踪。",
+        "url": "https://example.com/threejs-green-asset-management",
     },
     {
-        "title": "微软发布 Copilot Pro 企业版",
-        "summary": "微软推出面向企业的 Copilot Pro 版本，集成了更强大的代码生成和文档处理能力。新版本支持私有部署，确保企业数据安全。",
-        "url": "https://www.forbes.com/microsoft-copilot-pro"
+        "title": "空间大模型用于城市绿地识别试点",
+        "summary": "某研究团队探索空间大模型在城市绿地识别和变化监测中的应用，帮助养护单位更快发现裸土、缺株和异常区域。",
+        "url": "https://example.com/spatial-model-green-space",
     },
     {
-        "title": "AI芯片市场竞争加剧，英伟达面临挑战",
-        "summary": "AMD和英特尔相继发布新一代AI芯片，性能直逼英伟达H100。市场分析师预测，AI芯片市场将进入多强竞争时代，价格有望下降。",
-        "url": "https://www.bloomberg.com/news/ai-chip-competition"
+        "title": "园林机械企业发布新能源修剪设备",
+        "summary": "一家园林机械企业发布新能源绿篱修剪和草坪养护设备，主打低噪音、低维护和适合市政绿化场景。",
+        "url": "https://example.com/landscape-equipment",
     }
 ]
 

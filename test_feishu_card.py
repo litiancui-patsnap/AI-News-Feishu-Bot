@@ -63,7 +63,7 @@ def test_card_with_image():
                     "img_key": "https://raw.githubusercontent.com/litiancui-patsnap/AI-News-Feishu-Bot/main/images/ai_banner.png",
                     "alt": {
                         "tag": "plain_text",
-                        "content": "AI资讯日报"
+                        "content": "绿化养护行业日报"
                     },
                     "mode": "fit_horizontal",
                     "preview": True

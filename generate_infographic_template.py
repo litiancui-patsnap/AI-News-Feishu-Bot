@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-AI 新闻信息图生成器 - 模板系统版本
+绿化养护行业信息图生成器 - 模板系统版本
 
 功能：
 - 使用 Pillow 生成信息图
@@ -84,46 +84,58 @@ def generate_infographic_template(news_item, output_path):
         # 提取新闻信息
         title = news_item.get('title', '无标题')
         summary = news_item.get('summary', '')
-        category = news_item.get('category', '🧠 模型/技术')
+        category = news_item.get('category', '🏞️ 行业动态')
 
         # 图片尺寸（16:9）
         width, height = 1200, 675
 
         # 根据分类选择配色
         color_schemes = {
-            '🖥️ 芯片/硬件': {
+            '🏞️ 行业动态': {
+                'bg': (240, 253, 244),
+                'primary': (22, 163, 74),
+                'accent': (37, 99, 235),
+                'text': (33, 33, 33),
+            },
+            '🌿 绿化养护': {
+                'bg': (236, 253, 245),
+                'primary': (5, 150, 105),
+                'accent': (245, 158, 11),
+                'text': (33, 33, 33),
+            },
+            '🚿 设备/灌溉': {
                 'bg': (240, 248, 255),  # 浅蓝色背景
-                'primary': (30, 91, 255),  # 科技蓝
-                'accent': (255, 107, 53),  # 橙色
+                'primary': (14, 116, 144),
+                'accent': (22, 163, 74),
                 'text': (33, 33, 33),  # 深灰色文字
             },
-            '📜 政策/伦理': {
+            '📜 政策/标准': {
                 'bg': (245, 247, 250),  # 浅灰色背景
-                'primary': (74, 144, 226),  # 专业蓝
-                'accent': (255, 107, 53),
+                'primary': (71, 85, 105),
+                'accent': (22, 163, 74),
                 'text': (33, 33, 33),
             },
-            '🏭 产业/公司': {
+            '🏗️ 项目/招采': {
                 'bg': (240, 253, 250),  # 浅绿色背景
-                'primary': (16, 185, 129),  # 商务绿
-                'accent': (255, 107, 53),
+                'primary': (13, 148, 136),
+                'accent': (245, 158, 11),
                 'text': (33, 33, 33),
             },
-            '🧠 模型/技术': {
-                'bg': (245, 243, 255),  # 浅紫色背景
-                'primary': (124, 58, 237),  # 紫色
-                'accent': (255, 107, 53),
+            '🧠 智慧园林': {
+                'bg': (239, 246, 255),
+                'primary': (37, 99, 235),
+                'accent': (22, 163, 74),
                 'text': (33, 33, 33),
             },
-            '📊 周报/深度': {
+            '🧭 3DJS/空间大模型': {
                 'bg': (240, 248, 255),
-                'primary': (59, 130, 246),  # 深蓝色
-                'accent': (255, 107, 53),
+                'primary': (29, 78, 216),
+                'accent': (16, 185, 129),
                 'text': (33, 33, 33),
             }
         }
 
-        colors = color_schemes.get(category, color_schemes['🧠 模型/技术'])
+        colors = color_schemes.get(category, color_schemes['🏞️ 行业动态'])
 
         # 创建画布
         img = Image.new('RGB', (width, height), colors['bg'])
@@ -178,7 +190,7 @@ def generate_infographic_template(news_item, output_path):
         draw.text((margin, footer_y), date_str, fill=colors['primary'], font=font_footer)
 
         # 来源
-        source_text = "AI资讯日报"
+        source_text = "绿化养护行业日报"
         source_bbox = draw.textbbox((0, 0), source_text, font=font_footer)
         source_width = source_bbox[2] - source_bbox[0]
         draw.text((width - margin - source_width, footer_y), source_text,
@@ -199,13 +211,13 @@ def generate_infographic_template(news_item, output_path):
 def test_generate():
     """测试函数"""
     test_news = {
-        'title': 'OpenAI 发布 GPT-5，性能提升 10 倍，推理速度提高 50%',
-        'summary': 'OpenAI 今日正式发布 GPT-5 模型，相比 GPT-4 性能提升 10 倍，推理速度提高 50%，成本降低 30%。新模型在数学、编程和多模态理解方面表现出色，标志着人工智能技术的重大突破。',
-        'category': '🧠 模型/技术'
+        'title': '某市启动公园绿地智慧养护试点',
+        'summary': '某市园林部门启动智慧养护试点，结合传感器、智能灌溉和三维场景管理提升绿地巡检效率。',
+        'category': '🧠 智慧园林'
     }
 
     print("=" * 60)
-    print("测试：生成 AI 新闻信息图（模板系统）")
+    print("测试：生成绿化养护行业信息图（模板系统）")
     print("=" * 60)
 
     output_dir = "./images/generated"

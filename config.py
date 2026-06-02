@@ -55,10 +55,14 @@ FEISHU_APP_SECRET = os.getenv("FEISHU_APP_SECRET", "")
 MAX_NEWS_ITEMS = _get_int("MAX_NEWS_ITEMS", 3)
 SEARCH_QUERY = os.getenv(
     "SEARCH_QUERY",
-    "OpenAI Google Meta Anthropic AI model launch release",
+    (
+        "绿化养护 | 园林绿化 | 城市绿化 | 市政养护 绿化 | "
+        "养护标准 绿化 | 绿化招标 | 智慧园林 | 智能灌溉 | 园林机械 | "
+        "3DJS WebGL 空间 | Three.js GIS 空间 | 空间大模型 | 数字孪生 三维重建"
+    ),
 )
-SEARCH_REGION = os.getenv("SEARCH_REGION", "us-en")
-SEARCH_TIME_LIMIT = os.getenv("SEARCH_TIME_LIMIT", "d")
+SEARCH_REGION = os.getenv("SEARCH_REGION", "cn-zh")
+SEARCH_TIME_LIMIT = os.getenv("SEARCH_TIME_LIMIT", "w")
 NEWS_MAX_AGE_HOURS = _get_int("NEWS_MAX_AGE_HOURS", 48)
 PUSH_TIME = os.getenv("PUSH_TIME", "9:50")
 

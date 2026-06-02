@@ -20,7 +20,7 @@ card = {
     "card": {
         "header": {
             "title": {
-                "content": f"AI资讯日报 | <font color='orange'>{date}</font>",
+                "content": f"绿化养护行业日报 | <font color='orange'>{date}</font>",
                 "tag": "lark_md"
             },
             "template": "blue",
@@ -35,7 +35,7 @@ card = {
                 "img_key": image_key,
                 "alt": {
                     "tag": "plain_text",
-                    "content": "AI资讯日报"
+                    "content": "绿化养护行业日报"
                 },
                 "mode": "compact_horizontal",  # 使用紧凑模式，高度最小
                 "preview": True
@@ -44,14 +44,14 @@ card = {
                 "tag": "div",
                 "text": {
                     "tag": "plain_text",
-                    "content": "今日精选 3 条AI行业重要资讯\n🧠 今日AI要点：AI技术在多个领域取得突破性进展"
+                    "content": "今日精选 3 条行业重要资讯\n🌿 今日行业要点：智慧园林和空间技术正在进入绿化养护场景"
                 }
             },
             {
                 "tag": "div",
                 "text": {
                     "tag": "plain_text",
-                    "content": "• 🧠 模型/技术 | OpenAI发布新一代GPT模型\n• 🏭 产业/公司 | 微软AI业务增长超预期\n• 📜 政策/伦理 | 欧盟通过AI监管新法案"
+                    "content": "• 🌿 绿化养护 | 某市发布城市绿化养护标准\n• 🧠 智慧园林 | 智能灌溉平台接入巡检数据\n• 🧭 3DJS/空间大模型 | Three.js用于绿化资产管理"
                 }
             },
             {
@@ -61,7 +61,7 @@ card = {
                 "tag": "div",
                 "text": {
                     "tag": "lark_md",
-                    "content": "**🧠 模型/技术 | 🔥 今日焦点｜OpenAI发布新一代GPT模型**  [阅读原文 · Techcrunch](https://techcrunch.com)\nOpenAI今日发布了新一代GPT模型，在推理能力和多模态理解方面取得重大突破，性能提升显著。"
+                    "content": "**🌿 绿化养护 | 🔥 今日焦点｜某市发布城市绿化养护标准**  [阅读原文 · 示例来源](https://example.com)\n某市园林部门发布新的城市绿化养护标准，覆盖修剪、灌溉和病虫害防治等关键环节。"
                 }
             },
             {
@@ -71,7 +71,7 @@ card = {
                 "tag": "div",
                 "text": {
                     "tag": "lark_md",
-                    "content": "**🏭 产业/公司 | 微软AI业务增长超预期**  [阅读原文 · Microsoft](https://microsoft.com)\n微软最新财报显示，其AI相关业务收入同比增长超过50%，Azure AI服务成为主要增长引擎。"
+                    "content": "**🧠 智慧园林 | 智能灌溉平台接入巡检数据**  [阅读原文 · 示例来源](https://example.com)\n智慧园林平台接入土壤湿度、气象和巡检数据，用于优化绿地浇灌和养护排班。"
                 }
             },
             {
@@ -81,7 +81,7 @@ card = {
                 "tag": "div",
                 "text": {
                     "tag": "lark_md",
-                    "content": "**📜 政策/伦理 | 欧盟通过AI监管新法案**  [阅读原文 · Reuters](https://reuters.com)\n欧盟议会正式通过AI监管法案，对高风险AI应用实施严格监管，将于2026年全面生效。"
+                    "content": "**🧭 3DJS/空间大模型 | Three.js用于绿化资产管理**  [阅读原文 · 示例来源](https://example.com)\n园区项目使用 Three.js 和 GIS 数据构建三维绿化资产台账，支持树木定位和巡检问题追踪。"
                 }
             }
         ]
